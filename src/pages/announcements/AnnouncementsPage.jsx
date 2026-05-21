@@ -87,8 +87,8 @@ export default function AnnouncementsPage() {
         </Card>
       ) : (
         <div className="flex flex-col gap-3">
-          {announcements.map((a) => (
-            <Card key={a.id}>
+          {announcements.map((a, i) => (
+            <Card key={a.id} className="animate-fade-up" style={{ animationDelay: `${i * 60}ms` }}>
               <CardContent className="p-4 flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">

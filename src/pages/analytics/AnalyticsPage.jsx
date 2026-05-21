@@ -49,10 +49,10 @@ export default function AnalyticsPage() {
       )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Instructors"    value={stats.total_instructors} icon={Users}         color="text-primary"    loading={isLoading} />
-        <StatCard label="Total Courses"  value={stats.total_courses}     icon={BookOpen}      color="text-secondary"  loading={isLoading} />
-        <StatCard label="Enrollments"    value={stats.total_enrollments} icon={GraduationCap} color="text-purple-500" loading={isLoading} />
-        <StatCard label="Completions"    value={stats.total_completions} icon={TrendingUp}    color="text-success"    loading={isLoading} />
+        <StatCard label="Instructors"    value={stats.total_instructors} icon={Users}         color="text-primary"    loading={isLoading} index={0} />
+        <StatCard label="Total Courses"  value={stats.total_courses}     icon={BookOpen}      color="text-secondary"  loading={isLoading} index={1} />
+        <StatCard label="Enrollments"    value={stats.total_enrollments} icon={GraduationCap} color="text-purple-500" loading={isLoading} index={2} />
+        <StatCard label="Completions"    value={stats.total_completions} icon={TrendingUp}    color="text-success"    loading={isLoading} index={3} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

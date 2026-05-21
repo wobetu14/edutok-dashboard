@@ -4,6 +4,7 @@ import {
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 export function DataTable({
   columns,
@@ -52,7 +53,14 @@ export function DataTable({
               </TableRow>
             ) : (
               rows.map((row, i) => (
-                <TableRow key={row.id ?? i} className="hover:bg-muted/40">
+                <TableRow
+                  key={row.id ?? i}
+                  className={cn(
+                    'hover:bg-muted/40 animate-fade-up',
+                    'transition-colors duration-150',
+                  )}
+                  style={{ animationDelay: `${i * 30}ms` }}
+                >
                   {columns.map((col) => (
                     <TableCell key={col.key}>
                       {col.render ? col.render(row) : (row[col.key] ?? '—')}

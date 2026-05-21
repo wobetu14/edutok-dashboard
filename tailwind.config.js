@@ -61,9 +61,50 @@ export default {
       },
       boxShadow: {
         card:     '0 1px 3px 0 rgba(0,0,0,0.07), 0 1px 2px -1px rgba(0,0,0,0.05)',
+        'card-hover': '0 8px 24px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06)',
         dropdown: '0 4px 16px rgba(0,0,0,0.10)',
+      },
+      keyframes: {
+        'fade-up': {
+          '0%':   { opacity: '0', transform: 'translateY(16px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'fade-in': {
+          '0%':   { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        'slide-left': {
+          '0%':   { opacity: '0', transform: 'translateX(-14px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
+        },
+        'scale-in': {
+          '0%':   { opacity: '0', transform: 'scale(0.95)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        'slide-down': {
+          '0%':   { opacity: '0', transform: 'translateY(-10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'count-flash': {
+          '0%, 100%': { opacity: '1' },
+          '50%':      { opacity: '0.6' },
+        },
+      },
+      animation: {
+        'fade-up':    'fade-up 0.45s cubic-bezier(0.16,1,0.3,1) both',
+        'fade-in':    'fade-in 0.3s ease both',
+        'slide-left': 'slide-left 0.35s cubic-bezier(0.16,1,0.3,1) both',
+        'scale-in':   'scale-in 0.3s cubic-bezier(0.16,1,0.3,1) both',
+        'slide-down': 'slide-down 0.3s cubic-bezier(0.16,1,0.3,1) both',
+        'count-flash': 'count-flash 0.15s ease',
+      },
+      transitionTimingFunction: {
+        spring: 'cubic-bezier(0.16,1,0.3,1)',
       },
     },
   },
-  plugins: [],
+  plugins: [
+    // eslint-disable-next-line no-undef
+    require('tailwindcss-animate'),
+  ],
 }

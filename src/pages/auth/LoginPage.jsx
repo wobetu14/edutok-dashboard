@@ -40,15 +40,15 @@ export default function LoginPage() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center shadow-md mb-3">
+        <div className="flex flex-col items-center mb-8 animate-fade-up" style={{ animationDelay: '0ms' }}>
+          <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center shadow-md mb-3 transition-transform duration-300 hover:scale-105">
             <span className="text-white font-black text-2xl">E</span>
           </div>
           <h1 className="text-2xl font-bold text-foreground">EduTok Dashboard</h1>
           <p className="text-sm text-muted-foreground mt-1">Sign in to your admin account</p>
         </div>
 
-        <Card>
+        <Card className="animate-fade-up shadow-card-hover" style={{ animationDelay: '100ms' }}>
           <CardHeader className="pb-4">
             <CardTitle className="text-lg">Welcome back</CardTitle>
             <CardDescription>Enter your credentials to continue</CardDescription>

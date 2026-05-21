@@ -11,14 +11,23 @@ export default function Header() {
   const roleInfo = ROLES[user?.role]
 
   return (
-    <header className="h-14 px-6 border-b border-border bg-card flex items-center justify-between sticky top-0 z-10">
-      <h1 className="text-base font-semibold text-foreground">{current?.label ?? 'EduTok'}</h1>
+    <header className="h-14 px-6 border-b border-border bg-card flex items-center justify-between sticky top-0 z-10 animate-slide-down">
+      <h1
+        key={pathname}
+        className="text-base font-semibold text-foreground animate-fade-in"
+      >
+        {current?.label ?? 'EduTok'}
+      </h1>
       <div className="flex items-center gap-3">
         {roleInfo && (
-          <Badge color={roleInfo.color}>{roleInfo.label}</Badge>
+          <Badge color={roleInfo.color} className="animate-fade-in" style={{ animationDelay: '80ms' }}>
+            {roleInfo.label}
+          </Badge>
         )}
         <Separator orientation="vertical" className="h-4" />
-        <span className="text-sm text-muted-foreground hidden sm:block">{user?.full_name}</span>
+        <span className="text-sm text-muted-foreground hidden sm:block animate-fade-in" style={{ animationDelay: '120ms' }}>
+          {user?.full_name}
+        </span>
       </div>
     </header>
   )
