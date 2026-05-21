@@ -3,22 +3,49 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    /* EduTok light mode — mapped to shadcn CSS variable convention */
+    --background:          220 17% 97%;   /* #F7F8FA */
+    --foreground:          0 0% 5%;       /* #0D0D0D */
+    --card:                0 0% 100%;     /* #FFFFFF */
+    --card-foreground:     0 0% 5%;
+    --popover:             0 0% 100%;
+    --popover-foreground:  0 0% 5%;
+    --primary:             348 99% 58%;   /* #FE2C55 */
+    --primary-foreground:  0 0% 100%;
+    --secondary:           178 90% 55%;   /* #25F4EE */
+    --secondary-foreground: 0 0% 5%;
+    --muted:               220 14% 96%;
+    --muted-foreground:    220 9% 46%;    /* #6B7280 */
+    --accent:              220 14% 96%;
+    --accent-foreground:   0 0% 5%;
+    --destructive:         0 84% 60%;     /* #EF4444 */
+    --destructive-foreground: 0 0% 100%;
+    --border:              220 13% 91%;   /* #E5E7EB */
+    --input:               220 13% 91%;
+    --ring:                348 99% 58%;
+    --radius:              0.75rem;
+  }
+
   * { box-sizing: border-box; }
   body {
-    @apply bg-bg text-ink font-sans antialiased;
+    @apply bg-background text-foreground font-sans antialiased;
     margin: 0;
   }
   #root { min-height: 100vh; }
 }
 
 @layer components {
+  /* Sidebar nav link */
   .sidebar-link {
-    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted
-           hover:bg-primary-light hover:text-primary transition-colors;
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+           text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors;
   }
   .sidebar-link.active {
-    @apply bg-primary-light text-primary;
+    @apply bg-primary/10 text-primary;
   }
+
+  /* Legacy utility classes — kept for backward compat */
   .btn {
     @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold
            transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
@@ -27,18 +54,15 @@
     @apply btn bg-primary text-white hover:bg-primary-hover;
   }
   .btn-ghost {
-    @apply btn bg-transparent text-muted hover:bg-border hover:text-ink;
+    @apply btn bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground;
   }
   .btn-danger {
     @apply btn bg-danger text-white hover:opacity-90;
   }
   .input {
-    @apply w-full px-3 py-2 rounded-lg border border-border bg-surface text-sm text-ink
-           placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30
+    @apply w-full px-3 py-2 rounded-lg border border-border bg-card text-sm text-foreground
+           placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30
            focus:border-primary transition-colors;
-  }
-  .card {
-    @apply bg-surface rounded-xl border border-border shadow-card;
   }
   .badge {
     @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold;

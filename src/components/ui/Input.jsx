@@ -1,11 +1,19 @@
-import clsx from 'clsx';
+import * as React from "react"
 
-export default function Input({ label, error, className, ...props }) {
+import { cn } from "@/lib/utils"
+
+const Input = React.forwardRef(({ className, type, ...props }, ref) => {
   return (
-    <div className="flex flex-col gap-1">
-      {label && <label className="text-sm font-medium text-ink">{label}</label>}
-      <input className={clsx('input', error && 'border-danger focus:ring-danger/30', className)} {...props} />
-      {error && <p className="text-xs text-danger">{error}</p>}
-    </div>
+    <input
+      type={type}
+      className={cn(
+        "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+        className
+      )}
+      ref={ref}
+      {...props} />
   );
-}
+})
+Input.displayName = "Input"
+
+export { Input }
