@@ -89,6 +89,8 @@
 }
 
 @layer utilities {
+  .ease-spring { transition-timing-function: cubic-bezier(0.16,1,0.3,1); }
+
   /* Stagger delay helpers — used via style prop for dynamic values */
   .animation-fill-both { animation-fill-mode: both; }
 
