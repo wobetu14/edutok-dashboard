@@ -37,7 +37,7 @@ export default function UsersPage() {
     queryKey: ['users', page, search, roleFilter],
     queryFn: () =>
       api.listUsers({ page, limit: LIMIT, search: search || undefined, role: roleFilter || undefined })
-        .then((r) => r.data.data),
+        .then((r) => ({ users: r.data.data, total: r.data.meta?.total ?? 0 })),
     keepPreviousData: true,
   })
 

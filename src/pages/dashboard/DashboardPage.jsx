@@ -42,10 +42,10 @@ export default function DashboardPage() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Users"    value={stats.totalUsers}       icon={Users}         color="text-primary"      loading={isLoading} />
-        <StatCard label="Organizations"  value={stats.totalOrgs}        icon={Building2}     color="text-secondary"    loading={isLoading} />
-        <StatCard label="Courses"        value={stats.totalCourses}     icon={BookOpen}      color="text-purple-500"   loading={isLoading} />
-        <StatCard label="Enrollments"    value={stats.totalEnrollments} icon={GraduationCap} color="text-success"      loading={isLoading} />
+        <StatCard label="Total Users"    value={stats.total_users}       icon={Users}         color="text-primary"    loading={isLoading} />
+        <StatCard label="Organizations"  value={stats.total_orgs}        icon={Building2}     color="text-secondary"  loading={isLoading} />
+        <StatCard label="Courses"        value={stats.total_courses}     icon={BookOpen}      color="text-purple-500" loading={isLoading} />
+        <StatCard label="Enrollments"    value={stats.total_enrollments} icon={GraduationCap} color="text-success"    loading={isLoading} />
       </div>
 
       {/* Charts */}

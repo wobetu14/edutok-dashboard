@@ -47,7 +47,8 @@ export default function OrgsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['orgs', page, search],
     queryFn: () =>
-      api.listOrgs({ page, limit: LIMIT, search: search || undefined }).then((r) => r.data.data),
+      api.listOrgs({ page, limit: LIMIT, search: search || undefined })
+        .then((r) => ({ organizations: r.data.data, total: r.data.meta?.total ?? 0 })),
     keepPreviousData: true,
   })
 

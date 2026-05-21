@@ -39,7 +39,8 @@ export default function CoursesPage() {
     queryFn: () =>
       isPendingTab
         ? api.listPending({ page, limit: LIMIT }).then((r) => r.data.data)
-        : api.listMyCourses({ page, limit: LIMIT, status: tab === 'all' ? undefined : tab }).then((r) => r.data.data),
+        : api.listMyCourses({ page, limit: LIMIT, status: tab === 'all' ? undefined : tab })
+            .then((r) => ({ courses: r.data.data, total: r.data.meta?.total ?? 0 })),
     keepPreviousData: true,
   })
 

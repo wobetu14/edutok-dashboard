@@ -64,7 +64,7 @@ export default function AnnouncementsPage() {
     })
   }
 
-  const announcements = data?.announcements ?? []
+  const announcements = data ?? []
 
   return (
     <div className="flex flex-col gap-4">
