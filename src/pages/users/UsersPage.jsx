@@ -36,7 +36,7 @@ export default function UsersPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['users', page, search, roleFilter],
     queryFn: () =>
-      api.listUsers({ page, limit: LIMIT, q: search || undefined, role: roleFilter || undefined })
+      api.listUsers({ page, limit: LIMIT, search: search || undefined, role: roleFilter || undefined })
         .then((r) => r.data.data),
     keepPreviousData: true,
   })
