@@ -27,13 +27,13 @@
     --radius:                   0.75rem;
 
     /* ─── Sidebar — Teams-style dark rail ────────────────────────────────── */
-    --sidebar-bg:               224 28% 16%;   /* #1C2338 slightly lighter navy */
-    --sidebar-bg-elevated:      224 24% 21%;   /* #242E47 hover */
-    --sidebar-fg:               220 20% 86%;   /* #D2D7EA body text */
-    --sidebar-muted:            220 12% 62%;   /* #8F96A9 clearly visible on dark bg */
-    --sidebar-border:           224 20% 19%;   /* #242C3F dividers */
-    --sidebar-active-bg:        348 80% 60% / 0.13;
-    --sidebar-active-fg:        0 100% 71%;    /* #FF6B6B lightened primary */
+    --sidebar-bg:               220 17% 92%;   /* light gray, just darker than body */
+    --sidebar-bg-elevated:      220 15% 87%;   /* hover state */
+    --sidebar-fg:               220 20% 18%;   /* dark text */
+    --sidebar-muted:            220 10% 45%;   /* muted dark text */
+    --sidebar-border:           220 13% 84%;   /* subtle light border */
+    --sidebar-active-bg:        348 80% 60% / 0.10;
+    --sidebar-active-fg:        348 99% 45%;   /* primary red */
 
     /* ─── Elevation system ───────────────────────────────────────────────── */
     --shadow-e1:  0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
@@ -157,7 +157,7 @@
   }
   .sidebar-nav-item.active {
     background: hsl(var(--sidebar-active-bg));
-    color: #ff8fa8;
+    color: #FE2C55;
     font-weight: 600;
     transform: none;
   }
@@ -179,8 +179,10 @@
     transition: background 0.2s ease, border-color 0.2s ease;
   }
   .sidebar-user-card:hover {
-    background: hsl(224 22% 20%);
-    border-color: rgba(254,44,85,0.2);
+    background: #000000;
+    border-color: rgba(254,44,85,0.3);
+    --sidebar-fg:    0 0% 100%;
+    --sidebar-muted: 0 0% 70%;
   }
 
   /* Presence dot */
@@ -235,7 +237,7 @@
   }
   .sidebar-icon-item.active {
     background: hsl(var(--sidebar-active-bg));
-    color: #ff8fa8;
+    color: #FE2C55;
   }
   .sidebar-icon-item.active::before { height: 22px; }
   .sidebar-icon-item.active svg { color: #FE2C55; }
