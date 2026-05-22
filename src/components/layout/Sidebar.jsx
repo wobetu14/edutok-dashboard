@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useMatch } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Building2, BookOpen,
   BarChart2, ScrollText, Megaphone, LogOut,
@@ -6,9 +6,7 @@ import {
 import { useAuth } from '@/context/AuthContext'
 import { NAV_ITEMS } from '@/utils/constants'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 
 const ICONS = { LayoutDashboard, Users, Building2, BookOpen, BarChart2, ScrollText, Megaphone }
@@ -17,7 +15,33 @@ function initials(name = '') {
   return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
 }
 
-export default function Sidebar() {
+/*
+ * Separate component so useMatch runs at component level → className on
+ * NavLink is a plain string → Radix Slot can merge it without stripping it.
+ * (When className is a function, Slot's cloneElement call drops it entirely.)
+ */
+function IconNavItem({ path, label, iconName }) {
+  const isActive = !!useMatch({ path, end: path === '/' })
+  const Icon = ICONS[iconName]
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <NavLink
+          to={path}
+          className={cn('sidebar-icon-item', isActive && 'active')}
+        >
+          {Icon && <Icon size={18} />}
+        </NavLink>
+      </TooltipTrigger>
+      <TooltipContent side="right" sideOffset={8} className="font-medium text-xs">
+        {label}
+      </TooltipContent>
+    </Tooltip>
+  )
+}
+
+export default function Sidebar({ collapsed, onToggle }) {
   const { user, logout } = useAuth()
 
   const visibleItems = NAV_ITEMS.filter(
@@ -25,83 +49,140 @@ export default function Sidebar() {
   )
 
   return (
-    <TooltipProvider>
-      <aside className="w-60 flex-shrink-0 bg-card border-r border-border flex flex-col h-screen sticky top-0 animate-slide-left">
-        {/* Logo */}
-        <div className="px-5 py-4 flex items-center gap-2.5 animate-fade-in" style={{ animationDelay: '60ms' }}>
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-sm transition-transform duration-300 hover:scale-110">
-            <span className="text-white font-black text-sm">E</span>
+    <aside
+      className={cn(
+        'sidebar-shell flex-shrink-0 flex flex-col h-screen sticky top-0 animate-slide-left',
+        'transition-[width] duration-300 ease-spring',
+        collapsed ? 'w-[72px]' : 'w-60',
+      )}
+      style={{ overflow: 'clip' }}
+    >
+
+        {/* ── Logo zone ────────────────────────────────────────────── */}
+        <div
+          className="sidebar-logo-zone flex-shrink-0"
+          style={{
+            justifyContent: collapsed ? 'center' : undefined,
+            gap:            collapsed ? 0 : undefined,
+            padding:        collapsed ? '16px 8px' : undefined,
+          }}
+        >
+          <div className="sidebar-logo-icon flex-shrink-0">
+            <span className="text-white font-black text-sm select-none">E</span>
           </div>
-          <span className="font-bold text-foreground text-base tracking-tight">EduTok</span>
-          <span className="ml-auto text-[10px] font-semibold text-muted-foreground bg-muted border border-border px-1.5 py-0.5 rounded-md">
-            Admin
-          </span>
+          {!collapsed && (
+            <>
+              <span className="sidebar-brand flex-1">EduTok</span>
+              <span className="sidebar-badge">Admin</span>
+            </>
+          )}
         </div>
 
-        <Separator />
-
-        {/* Navigation */}
-        <ScrollArea className="flex-1 px-3 py-3">
-          <nav className="flex flex-col gap-0.5">
+        {/* ── Navigation ───────────────────────────────────────────── */}
+        <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '12px 8px' }}>
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {visibleItems.map(({ path, label, icon }, i) => {
               const Icon = ICONS[icon]
+
+              if (collapsed) {
+                return (
+                  <IconNavItem
+                    key={path}
+                    path={path}
+                    label={label}
+                    iconName={icon}
+                  />
+                )
+              }
+
               return (
                 <NavLink
                   key={path}
                   to={path}
                   className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium',
-                      'transition-all duration-200',
-                      'animate-slide-left',
-                      isActive
-                        ? 'bg-primary/10 text-primary shadow-sm'
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground hover:translate-x-0.5',
-                    )
+                    cn('sidebar-nav-item animate-slide-left', isActive && 'active')
                   }
                   style={{ animationDelay: `${80 + i * 45}ms` }}
                 >
-                  {Icon && (
-                    <Icon
-                      size={17}
-                      className="flex-shrink-0 transition-transform duration-200 group-hover:scale-110"
-                    />
-                  )}
+                  {Icon && <Icon size={16} className="flex-shrink-0" />}
                   {label}
                 </NavLink>
               )
             })}
           </nav>
-        </ScrollArea>
-
-        <Separator />
-
-        {/* User footer */}
-        <div
-          className="px-3 py-3 flex flex-col gap-1 animate-fade-in"
-          style={{ animationDelay: '400ms' }}
-        >
-          <div className="flex items-center gap-3 px-2 py-1.5 rounded-lg">
-            <Avatar className="h-8 w-8 flex-shrink-0 ring-2 ring-transparent transition-all duration-200 hover:ring-primary/30">
-              <AvatarImage src={user?.avatar_url} alt={user?.full_name} />
-              <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
-                {initials(user?.full_name)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-foreground truncate">{user?.full_name}</p>
-              <p className="text-xs text-muted-foreground truncate">@{user?.username}</p>
-            </div>
-          </div>
-          <button
-            onClick={logout}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200 w-full group"
-          >
-            <LogOut size={16} className="transition-transform duration-200 group-hover:-translate-x-0.5" />
-            Sign out
-          </button>
         </div>
-      </aside>
-    </TooltipProvider>
+
+        {/* ── User footer ──────────────────────────────────────────── */}
+        <div
+          className="flex-shrink-0 flex flex-col gap-2"
+          style={{ borderTop: '1px solid hsl(var(--sidebar-border))', padding: '12px 8px' }}
+        >
+          {collapsed ? (
+            <div className="flex flex-col items-center gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div style={{ cursor: 'default' }}>
+                    <Avatar className="h-7 w-7" style={{ boxShadow: '0 0 0 2px rgba(255,255,255,0.12)' }}>
+                      <AvatarImage src={user?.avatar_url} alt={user?.full_name} />
+                      <AvatarFallback
+                        className="text-[10px] font-bold"
+                        style={{ background: 'rgba(254,44,85,0.2)', color: '#ff8fa8' }}
+                      >
+                        {initials(user?.full_name)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={8}>
+                  <p className="font-semibold text-xs">{user?.full_name}</p>
+                  <p className="text-[10px] opacity-70">@{user?.username}</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={logout}
+                    className="sidebar-icon-item"
+                    style={{ padding: '8px' }}
+                  >
+                    <LogOut size={14} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={8}>Sign out</TooltipContent>
+              </Tooltip>
+            </div>
+          ) : (
+            <>
+              <div className="sidebar-user-card">
+                <Avatar className="h-7 w-7 flex-shrink-0" style={{ boxShadow: '0 0 0 2px rgba(255,255,255,0.12)' }}>
+                  <AvatarImage src={user?.avatar_url} alt={user?.full_name} />
+                  <AvatarFallback
+                    className="text-xs font-bold"
+                    style={{ background: 'rgba(254,44,85,0.2)', color: '#ff8fa8' }}
+                  >
+                    {initials(user?.full_name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold truncate leading-tight" style={{ color: 'hsl(var(--sidebar-fg))' }}>
+                    {user?.full_name}
+                  </p>
+                  <p className="text-[10px] truncate" style={{ color: 'hsl(var(--sidebar-muted))' }}>
+                    @{user?.username}
+                  </p>
+                </div>
+                <div className="sidebar-presence" title="Online" />
+              </div>
+
+              <button onClick={logout} className="sidebar-signout-btn group">
+                <LogOut size={14} className="flex-shrink-0" />
+                Sign out
+              </button>
+            </>
+          )}
+        </div>
+
+    </aside>
   )
 }
