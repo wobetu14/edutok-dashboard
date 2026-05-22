@@ -263,7 +263,7 @@ export default function OrgsPage() {
               <div className="flex flex-col gap-1.5">
                 <Label>Description</Label>
                 <textarea
-                  className="px-3 py-2 rounded-md border border-input bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="px-3 py-2 rounded-md border border-input bg-background text-sm resize-none"
                   rows={3}
                   placeholder="Brief description of the organization…"
                   value={orgForm.description}

@@ -150,19 +150,6 @@ html[data-font-size="lg"] { font-size: 18px; }
   ::-webkit-scrollbar-thumb  { background: hsl(var(--border)); border-radius: 99px; }
   ::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.5); }
 
-  /* Smooth MUI-style transitions for all native form controls */
-  input, textarea, select {
-    border-width: 2px;
-    transition: border-color 0.2s ease-out, box-shadow 0.2s ease-out, background-color 0.2s ease-out;
-  }
-  input:hover:not(:disabled), textarea:hover:not(:disabled), select:hover:not(:disabled) {
-    border-color: hsl(var(--foreground) / 0.25);
-  }
-  input:focus:not(:disabled), textarea:focus:not(:disabled), select:focus:not(:disabled) {
-    outline: none;
-    border-color: hsl(var(--primary));
-    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15);
-  }
 }
 
 @layer components {
@@ -582,4 +569,38 @@ html[data-font-size="lg"] { font-size: 18px; }
     @apply absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-primary rounded-r-full
            transition-all duration-300;
   }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   GLOBAL FORM-CONTROL POLISH
+   Intentionally unlayered (outside any @layer) so this block wins the CSS
+   cascade over every Tailwind utility class — no need to repeat border-2,
+   focus:*, hover:*, or transition-* on individual elements.
+   Applies to all text-like inputs; checkboxes, radios, range, file, and
+   button inputs are excluded.
+══════════════════════════════════════════════════════════════════════════════ */
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="hidden"]),
+textarea,
+select {
+  border-width: 2px;
+  border-style: solid;
+  transition:
+    border-color 0.2s ease-out,
+    box-shadow   0.2s ease-out,
+    background-color 0.2s ease-out;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="hidden"]):hover:not(:disabled),
+textarea:hover:not(:disabled),
+select:hover:not(:disabled) {
+  border-color: hsl(var(--foreground) / 0.25);
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="hidden"]):focus:not(:disabled),
+textarea:focus:not(:disabled),
+select:focus:not(:disabled) {
+  outline: none;
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15);
 }

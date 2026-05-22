@@ -138,7 +138,7 @@ export default function AnnouncementsPage() {
             <div className="flex flex-col gap-1.5">
               <Label>Message <span className="text-destructive">*</span></Label>
               <textarea
-                className="px-3 py-2 rounded-md border border-input bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                className="px-3 py-2 rounded-md border border-input bg-background text-sm resize-none"
                 rows={3}
                 required
                 value={form.body}
@@ -150,7 +150,7 @@ export default function AnnouncementsPage() {
             <div className="flex flex-col gap-1.5">
               <Label>Target Audience</Label>
               <select
-                className="h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
                 value={form.target_role}
                 onChange={(e) => setForm({ ...form, target_role: e.target.value })}
               >

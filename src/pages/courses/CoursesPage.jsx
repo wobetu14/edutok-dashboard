@@ -177,7 +177,7 @@ export default function CoursesPage() {
                     Reason <span className="text-destructive">*</span>
                   </label>
                   <textarea
-                    className="h-10 px-3 py-2 rounded-md border border-input bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="px-3 py-2 rounded-md border border-input bg-background text-sm resize-none"
                     rows={3}
                     value={rejectReason}
                     onChange={(e) => setRejectReason(e.target.value)}

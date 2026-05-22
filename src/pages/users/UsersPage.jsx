@@ -156,7 +156,7 @@ export default function UsersPage() {
             />
           </div>
           <select
-            className="input w-36 h-10 px-3 rounded-md border border-input bg-background text-sm"
+            className="w-36 h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
             value={roleFilter}
             onChange={(e) => { setRole(e.target.value); setPage(1) }}
           >
@@ -225,7 +225,7 @@ export default function UsersPage() {
               <div className="flex flex-col gap-1.5">
                 <Label>Role</Label>
                 <select
-                  className="h-10 px-3 rounded-md border border-input bg-background text-sm"
+                  className="h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
                   value={form.role}
                   onChange={(e) => setForm({ ...form, role: e.target.value })}
                 >
