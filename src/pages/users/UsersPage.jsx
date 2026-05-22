@@ -8,12 +8,14 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { FieldError } from '@/components/ui/FieldError'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
 import { Spinner } from '@/components/ui/Spinner'
 import { api } from '@/api/client'
 import { ROLES } from '@/utils/constants'
+import { createUserSchema, fieldErrors } from '@/lib/schemas'
 
 const LIMIT = 20
 
@@ -21,20 +23,21 @@ function initials(name = '') {
   return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
 }
 
+const INIT_FORM = { full_name: '', username: '', phone: '', email: '', role: 'instructor', org_id: '' }
+
 export default function UsersPage() {
   const qc = useQueryClient()
   const [page, setPage]       = useState(1)
   const [search, setSearch]   = useState('')
   const [roleFilter, setRole] = useState('')
   const [modal, setModal]     = useState(false)
-  const [form, setForm]       = useState({
-    full_name: '', username: '', phone: '', email: '', role: 'instructor', org_id: '',
-  })
+  const [form, setForm]       = useState(INIT_FORM)
+  const [errors, setErrors]   = useState({})
+  const [apiError, setApiError] = useState('')
   const [tempPassword, setTempPassword] = useState('')
-  const [formError, setFormError]       = useState('')
 
   // Org combobox state
-  const [orgSearch, setOrgSearch]   = useState('')
+  const [orgSearch, setOrgSearch]     = useState('')
   const [orgDropOpen, setOrgDropOpen] = useState(false)
   const [selectedOrg, setSelectedOrg] = useState(null)
 
@@ -61,7 +64,7 @@ export default function UsersPage() {
       setTempPassword(res.data.data.tempPassword)
       qc.invalidateQueries(['users'])
     },
-    onError: (err) => setFormError(err.response?.data?.message ?? 'Failed to create user'),
+    onError: (err) => setApiError(err.response?.data?.message ?? 'Failed to create user'),
   })
 
   const toggleActive = useMutation({
@@ -69,21 +72,26 @@ export default function UsersPage() {
     onSuccess: () => qc.invalidateQueries(['users']),
   })
 
+  const clearField = (field) =>
+    setErrors((prev) => { const next = { ...prev }; delete next[field]; return next })
+
   const handleCreate = (e) => {
     e.preventDefault()
-    setFormError('')
-    if (!form.org_id) {
-      setFormError('Please select an organization.')
-      return
-    }
-    createUser.mutate(form)
+    setApiError('')
+
+    const result = createUserSchema.safeParse(form)
+    if (!result.success) { setErrors(fieldErrors(result)); return }
+
+    setErrors({})
+    createUser.mutate(result.data)
   }
 
   const closeModal = () => {
     setModal(false)
     setTempPassword('')
-    setFormError('')
-    setForm({ full_name: '', username: '', phone: '', email: '', role: 'instructor', org_id: '' })
+    setApiError('')
+    setErrors({})
+    setForm(INIT_FORM)
     setOrgSearch('')
     setSelectedOrg(null)
     setOrgDropOpen(false)
@@ -205,34 +213,63 @@ export default function UsersPage() {
               <Button onClick={closeModal}>Done</Button>
             </div>
           ) : (
-            <form onSubmit={handleCreate} className="flex flex-col gap-3">
+            <form onSubmit={handleCreate} className="flex flex-col gap-3" noValidate>
               <div className="flex flex-col gap-1.5">
                 <Label>Full Name</Label>
-                <Input required value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
+                <Input
+                  value={form.full_name}
+                  onChange={(e) => { setForm({ ...form, full_name: e.target.value }); clearField('full_name') }}
+                  aria-invalid={!!errors.full_name}
+                />
+                <FieldError message={errors.full_name} />
               </div>
+
               <div className="flex flex-col gap-1.5">
                 <Label>Username</Label>
-                <Input required value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} />
+                <Input
+                  value={form.username}
+                  onChange={(e) => { setForm({ ...form, username: e.target.value }); clearField('username') }}
+                  aria-invalid={!!errors.username}
+                />
+                <FieldError message={errors.username} />
               </div>
+
               <div className="flex flex-col gap-1.5">
                 <Label>Phone</Label>
-                <Input required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+1234567890" />
+                <Input
+                  value={form.phone}
+                  onChange={(e) => { setForm({ ...form, phone: e.target.value }); clearField('phone') }}
+                  placeholder="+1234567890"
+                  aria-invalid={!!errors.phone}
+                />
+                <FieldError message={errors.phone} />
               </div>
+
               <div className="flex flex-col gap-1.5">
-                <Label>Email (optional)</Label>
-                <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                <Label>Email <span className="text-muted-foreground text-xs">(optional)</span></Label>
+                <Input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => { setForm({ ...form, email: e.target.value }); clearField('email') }}
+                  aria-invalid={!!errors.email}
+                />
+                <FieldError message={errors.email} />
               </div>
+
               <div className="flex flex-col gap-1.5">
                 <Label>Role</Label>
                 <select
                   className="h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
                   value={form.role}
-                  onChange={(e) => setForm({ ...form, role: e.target.value })}
+                  onChange={(e) => { setForm({ ...form, role: e.target.value }); clearField('role') }}
+                  aria-invalid={!!errors.role}
                 >
                   <option value="instructor">Instructor</option>
                   <option value="org_admin">Org Admin</option>
                 </select>
+                <FieldError message={errors.role} />
               </div>
+
               <div className="flex flex-col gap-1.5 relative">
                 <Label>Organization</Label>
                 <Input
@@ -244,9 +281,11 @@ export default function UsersPage() {
                     setSelectedOrg(null)
                     setForm((f) => ({ ...f, org_id: '' }))
                     setOrgDropOpen(true)
+                    clearField('org_id')
                   }}
                   onFocus={() => { if (!selectedOrg) setOrgDropOpen(true) }}
                   onBlur={() => setTimeout(() => setOrgDropOpen(false), 150)}
+                  aria-invalid={!!errors.org_id}
                 />
                 {orgDropOpen && orgOptions.length > 0 && (
                   <div className="absolute top-[calc(100%+2px)] left-0 right-0 z-50 bg-popover border border-border rounded-md shadow-lg max-h-44 overflow-y-auto">
@@ -260,6 +299,7 @@ export default function UsersPage() {
                           setForm((f) => ({ ...f, org_id: org.id }))
                           setOrgSearch('')
                           setOrgDropOpen(false)
+                          clearField('org_id')
                         }}
                       >
                         {org.name}
@@ -270,8 +310,11 @@ export default function UsersPage() {
                 {!selectedOrg && !orgDropOpen && form.org_id === '' && orgSearch === '' && (
                   <p className="text-[11px] text-muted-foreground">Type to search organizations by name</p>
                 )}
+                <FieldError message={errors.org_id} />
               </div>
-              {formError && <p className="text-xs text-destructive">{formError}</p>}
+
+              {apiError && <p className="text-xs text-destructive">{apiError}</p>}
+
               <div className="flex gap-2 justify-end pt-1">
                 <Button variant="outline" type="button" onClick={closeModal}>Cancel</Button>
                 <Button type="submit" disabled={createUser.isPending}>

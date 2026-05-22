@@ -6,32 +6,37 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { FieldError } from '@/components/ui/FieldError'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Spinner } from '@/components/ui/Spinner'
 import { api } from '@/api/client'
+import { announcementSchema, fieldErrors } from '@/lib/schemas'
 
 const ROLE_OPTIONS = [
-  { value: '',          label: 'All roles' },
-  { value: 'learner',   label: 'Learners only' },
+  { value: '',           label: 'All roles' },
+  { value: 'learner',    label: 'Learners only' },
   { value: 'instructor', label: 'Instructors only' },
-  { value: 'org_admin', label: 'Org Admins only' },
+  { value: 'org_admin',  label: 'Org Admins only' },
 ]
 
 const ROLE_BADGE = {
-  '':          'bg-muted text-muted-foreground',
-  learner:     'bg-blue-100 text-blue-700',
-  instructor:  'bg-purple-100 text-purple-700',
-  org_admin:   'bg-secondary/20 text-teal-700',
+  '':         'bg-muted text-muted-foreground',
+  learner:    'bg-blue-100 text-blue-700',
+  instructor: 'bg-purple-100 text-purple-700',
+  org_admin:  'bg-secondary/20 text-teal-700',
 }
+
+const INIT_FORM = { title: '', body: '', target_role: '', expires_at: '' }
 
 export default function AnnouncementsPage() {
   const qc = useQueryClient()
-  const [modal, setModal] = useState(false)
-  const [form, setForm]   = useState({ title: '', body: '', target_role: '', expires_at: '' })
-  const [formError, setFormError] = useState('')
+  const [modal, setModal]   = useState(false)
+  const [form, setForm]     = useState(INIT_FORM)
+  const [errors, setErrors] = useState({})
+  const [apiError, setApiError] = useState('')
 
   const { data, isLoading } = useQuery({
     queryKey: ['announcements'],
@@ -43,9 +48,10 @@ export default function AnnouncementsPage() {
     onSuccess: () => {
       qc.invalidateQueries(['announcements'])
       setModal(false)
-      setForm({ title: '', body: '', target_role: '', expires_at: '' })
+      setForm(INIT_FORM)
+      setErrors({})
     },
-    onError: (err) => setFormError(err.response?.data?.message ?? 'Failed to create'),
+    onError: (err) => setApiError(err.response?.data?.message ?? 'Failed to create'),
   })
 
   const deleteMutation = useMutation({
@@ -53,14 +59,29 @@ export default function AnnouncementsPage() {
     onSuccess: () => qc.invalidateQueries(['announcements']),
   })
 
+  const clearField = (field) =>
+    setErrors((prev) => { const next = { ...prev }; delete next[field]; return next })
+
+  const openModal = () => {
+    setForm(INIT_FORM)
+    setErrors({})
+    setApiError('')
+    setModal(true)
+  }
+
   const handleSubmit = (e) => {
     e.preventDefault()
-    setFormError('')
+    setApiError('')
+
+    const result = announcementSchema.safeParse(form)
+    if (!result.success) { setErrors(fieldErrors(result)); return }
+
+    setErrors({})
     createMutation.mutate({
-      title:       form.title,
-      body:        form.body,
-      target_role: form.target_role || undefined,
-      expires_at:  form.expires_at  || undefined,
+      title:       result.data.title,
+      body:        result.data.body,
+      target_role: result.data.target_role || undefined,
+      expires_at:  result.data.expires_at  || undefined,
     })
   }
 
@@ -69,7 +90,7 @@ export default function AnnouncementsPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-end">
-        <Button onClick={() => { setModal(true); setFormError('') }}>
+        <Button onClick={openModal}>
           <Plus size={15} />
           New Announcement
         </Button>
@@ -125,14 +146,15 @@ export default function AnnouncementsPage() {
             <DialogTitle>New Announcement</DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
             <div className="flex flex-col gap-1.5">
-              <Label>Title</Label>
+              <Label>Title <span className="text-destructive">*</span></Label>
               <Input
-                required
                 value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                onChange={(e) => { setForm({ ...form, title: e.target.value }); clearField('title') }}
+                aria-invalid={!!errors.title}
               />
+              <FieldError message={errors.title} />
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -140,11 +162,12 @@ export default function AnnouncementsPage() {
               <textarea
                 className="px-3 py-2 rounded-md border border-input bg-background text-sm resize-none"
                 rows={3}
-                required
-                value={form.body}
-                onChange={(e) => setForm({ ...form, body: e.target.value })}
                 placeholder="Announcement message…"
+                value={form.body}
+                onChange={(e) => { setForm({ ...form, body: e.target.value }); clearField('body') }}
+                aria-invalid={!!errors.body}
               />
+              <FieldError message={errors.body} />
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -161,7 +184,7 @@ export default function AnnouncementsPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label>Expires At (optional)</Label>
+              <Label>Expires At <span className="text-muted-foreground text-xs">(optional)</span></Label>
               <Input
                 type="date"
                 value={form.expires_at}
@@ -169,7 +192,7 @@ export default function AnnouncementsPage() {
               />
             </div>
 
-            {formError && <p className="text-xs text-destructive">{formError}</p>}
+            {apiError && <p className="text-xs text-destructive">{apiError}</p>}
 
             <DialogFooter>
               <Button variant="outline" type="button" onClick={() => setModal(false)}>

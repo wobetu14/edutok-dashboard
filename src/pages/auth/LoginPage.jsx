@@ -5,28 +5,39 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { FieldError } from '@/components/ui/FieldError'
 import { Spinner } from '@/components/ui/Spinner'
 import { Eye, EyeOff } from 'lucide-react'
+import { loginSchema, fieldErrors } from '@/lib/schemas'
 
 export default function LoginPage() {
-  const { login }   = useAuth()
-  const navigate    = useNavigate()
+  const { login }  = useAuth()
+  const navigate   = useNavigate()
 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
-  const [error,    setError]    = useState('')
+  const [errors,   setErrors]   = useState({})
+  const [apiError, setApiError] = useState('')
   const [loading,  setLoading]  = useState(false)
+
+  const clearField = (field) =>
+    setErrors((prev) => { const next = { ...prev }; delete next[field]; return next })
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setError('')
+    setApiError('')
+
+    const result = loginSchema.safeParse({ username, password })
+    if (!result.success) { setErrors(fieldErrors(result)); return }
+
+    setErrors({})
     setLoading(true)
     try {
-      await login(username, password)
+      await login(result.data.username, result.data.password)
       navigate('/dashboard')
     } catch (err) {
-      setError(
+      setApiError(
         err.message?.includes('Access denied')
           ? err.message
           : err.response?.data?.message ?? 'Invalid credentials.',
@@ -54,7 +65,7 @@ export default function LoginPage() {
             <CardDescription>Enter your credentials to continue</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="username">Username</Label>
                 <Input
@@ -62,10 +73,11 @@ export default function LoginPage() {
                   type="text"
                   placeholder="e.g. superadmin"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={(e) => { setUsername(e.target.value); clearField('username') }}
                   autoComplete="username"
-                  required
+                  aria-invalid={!!errors.username}
                 />
+                <FieldError message={errors.username} />
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -77,9 +89,9 @@ export default function LoginPage() {
                     className="pr-10"
                     placeholder="••••••••"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => { setPassword(e.target.value); clearField('password') }}
                     autoComplete="current-password"
-                    required
+                    aria-invalid={!!errors.password}
                   />
                   <button
                     type="button"
@@ -89,11 +101,12 @@ export default function LoginPage() {
                     {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
+                <FieldError message={errors.password} />
               </div>
 
-              {error && (
+              {apiError && (
                 <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">
-                  {error}
+                  {apiError}
                 </p>
               )}
 

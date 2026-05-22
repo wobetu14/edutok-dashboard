@@ -13,6 +13,8 @@ import { api } from '@/api/client'
 import { COURSE_STATUS, COURSE_VISIBILITY, DIFFICULTY } from '@/utils/constants'
 import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/lib/utils'
+import { FieldError } from '@/components/ui/FieldError'
+import { rejectReasonSchema } from '@/lib/schemas'
 
 const LIMIT = 20
 
@@ -28,8 +30,9 @@ export default function CoursesPage() {
   const qc        = useQueryClient()
   const [page, setPage]         = useState(1)
   const [tab, setTab]           = useState('pending')
-  const [reviewModal, setModal] = useState(null)
+  const [reviewModal, setModal]         = useState(null)
   const [rejectReason, setRejectReason] = useState('')
+  const [rejectError, setRejectError]   = useState('')
   const [actionError, setActionError]   = useState('')
 
   const isPendingTab = tab === 'pending'
@@ -51,6 +54,7 @@ export default function CoursesPage() {
       qc.invalidateQueries(['courses'])
       setModal(null)
       setRejectReason('')
+      setRejectError('')
       setActionError('')
     },
     onError: (err) => setActionError(err.response?.data?.message ?? 'Action failed'),
@@ -155,7 +159,7 @@ export default function CoursesPage() {
       </Card>
 
       {/* Review dialog */}
-      <Dialog open={!!reviewModal} onOpenChange={(open) => { if (!open) { setModal(null); setActionError('') } }}>
+      <Dialog open={!!reviewModal} onOpenChange={(open) => { if (!open) { setModal(null); setRejectReason(''); setRejectError(''); setActionError('') } }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>
@@ -180,31 +184,39 @@ export default function CoursesPage() {
                     className="px-3 py-2 rounded-md border border-input bg-background text-sm resize-none"
                     rows={3}
                     value={rejectReason}
-                    onChange={(e) => setRejectReason(e.target.value)}
+                    onChange={(e) => { setRejectReason(e.target.value); setRejectError('') }}
                     placeholder="Explain why this course is being rejected…"
+                    aria-invalid={!!rejectError}
                   />
+                  <FieldError message={rejectError} />
                 </div>
               )}
 
               {actionError && <p className="text-xs text-destructive">{actionError}</p>}
 
               <DialogFooter>
-                <Button variant="outline" onClick={() => { setModal(null); setActionError('') }}>
+                <Button variant="outline" onClick={() => { setModal(null); setRejectReason(''); setRejectError(''); setActionError('') }}>
                   Cancel
                 </Button>
                 <Button
                   variant={reviewModal.action === 'approve' ? 'default' : 'destructive'}
-                  disabled={
-                    reviewMutation.isPending ||
-                    (reviewModal.action === 'reject' && !rejectReason.trim())
-                  }
-                  onClick={() =>
-                    reviewMutation.mutate({
-                      id: reviewModal.id,
-                      action: reviewModal.action,
-                      rejection_reason: rejectReason || undefined,
-                    })
-                  }
+                  disabled={reviewMutation.isPending}
+                  onClick={() => {
+                    if (reviewModal.action === 'reject') {
+                      const result = rejectReasonSchema.safeParse({ reason: rejectReason })
+                      if (!result.success) {
+                        setRejectError(result.error.issues[0]?.message ?? 'Reason is required')
+                        return
+                      }
+                      reviewMutation.mutate({
+                        id: reviewModal.id,
+                        action: 'reject',
+                        rejection_reason: result.data.reason,
+                      })
+                    } else {
+                      reviewMutation.mutate({ id: reviewModal.id, action: 'approve' })
+                    }
+                  }}
                 >
                   {reviewMutation.isPending
                     ? <Spinner size="sm" />

@@ -7,6 +7,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { FieldError } from '@/components/ui/FieldError'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog'
@@ -15,6 +16,7 @@ import { Spinner } from '@/components/ui/Spinner'
 import { Badge } from '@/components/ui/badge'
 import { api } from '@/api/client'
 import { useAuth } from '@/context/AuthContext'
+import { createOrgSchema, createOrgAdminSchema, fieldErrors } from '@/lib/schemas'
 
 const LIMIT = 20
 
@@ -22,10 +24,9 @@ function initials(name = '') {
   return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
 }
 
-const EMPTY_ORG  = { name: '', description: '', website: '', logo_url: '' }
+const EMPTY_ORG   = { name: '', description: '', website: '', logo_url: '' }
 const EMPTY_ADMIN = { full_name: '', username: '', phone: '', email: '' }
 
-// step: null | 'org' | 'admin' | 'done'
 export default function OrgsPage() {
   const { user } = useAuth()
   const qc       = useQueryClient()
@@ -35,14 +36,16 @@ export default function OrgsPage() {
   const [search, setSearch] = useState('')
 
   // Dialog state
-  const [step, setStep]         = useState(null)   // null | 'org' | 'admin' | 'done'
+  const [step, setStep]         = useState(null)
   const [orgForm, setOrgForm]   = useState(EMPTY_ORG)
-  const [orgError, setOrgError] = useState('')
-  const [createdOrg, setCreatedOrg] = useState(null) // org returned from API after creation
+  const [orgErrors, setOrgErrors]   = useState({})
+  const [orgApiError, setOrgApiError] = useState('')
+  const [createdOrg, setCreatedOrg]   = useState(null)
 
-  const [adminForm, setAdminForm]   = useState(EMPTY_ADMIN)
-  const [adminError, setAdminError] = useState('')
-  const [tempPassword, setTempPassword] = useState('')
+  const [adminForm, setAdminForm]         = useState(EMPTY_ADMIN)
+  const [adminErrors, setAdminErrors]     = useState({})
+  const [adminApiError, setAdminApiError] = useState('')
+  const [tempPassword, setTempPassword]   = useState('')
 
   const { data, isLoading } = useQuery({
     queryKey: ['orgs', page, search],
@@ -57,12 +60,11 @@ export default function OrgsPage() {
   const createOrgMutation = useMutation({
     mutationFn: (body) => api.createOrg(body),
     onSuccess: (res) => {
-      const org = res.data.data
-      setCreatedOrg(org)
+      setCreatedOrg(res.data.data)
       qc.invalidateQueries(['orgs'])
-      setStep('admin') // proceed to org admin step
+      setStep('admin')
     },
-    onError: (err) => setOrgError(err.response?.data?.message ?? 'Failed to create organization'),
+    onError: (err) => setOrgApiError(err.response?.data?.message ?? 'Failed to create organization'),
   })
 
   const createAdminMutation = useMutation({
@@ -72,7 +74,7 @@ export default function OrgsPage() {
       qc.invalidateQueries(['users'])
       setStep('done')
     },
-    onError: (err) => setAdminError(err.response?.data?.message ?? 'Failed to create org admin'),
+    onError: (err) => setAdminApiError(err.response?.data?.message ?? 'Failed to create org admin'),
   })
 
   const deleteOrgMutation = useMutation({
@@ -80,13 +82,21 @@ export default function OrgsPage() {
     onSuccess: () => qc.invalidateQueries(['orgs']),
   })
 
-  // ── Handlers ───────────────────────────────────────────────────────────────
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  const clearOrgField = (field) =>
+    setOrgErrors((prev) => { const next = { ...prev }; delete next[field]; return next })
+
+  const clearAdminField = (field) =>
+    setAdminErrors((prev) => { const next = { ...prev }; delete next[field]; return next })
 
   const openDialog = () => {
     setOrgForm(EMPTY_ORG)
     setAdminForm(EMPTY_ADMIN)
-    setOrgError('')
-    setAdminError('')
+    setOrgErrors({})
+    setOrgApiError('')
+    setAdminErrors({})
+    setAdminApiError('')
     setCreatedOrg(null)
     setTempPassword('')
     setStep('org')
@@ -94,26 +104,36 @@ export default function OrgsPage() {
 
   const closeDialog = () => setStep(null)
 
+  // ── Submit handlers ────────────────────────────────────────────────────────
+
   const handleOrgSubmit = (e) => {
     e.preventDefault()
-    setOrgError('')
-    const body = { name: orgForm.name }
-    if (orgForm.description) body.description = orgForm.description
-    if (orgForm.website)     body.website     = orgForm.website
-    if (orgForm.logo_url)    body.logo_url    = orgForm.logo_url
+    setOrgApiError('')
+
+    const result = createOrgSchema.safeParse(orgForm)
+    if (!result.success) { setOrgErrors(fieldErrors(result)); return }
+
+    setOrgErrors({})
+    const { name, description, website, logo_url } = result.data
+    const body = { name }
+    if (description) body.description = description
+    if (website)     body.website     = website
+    if (logo_url)    body.logo_url    = logo_url
     createOrgMutation.mutate(body)
   }
 
   const handleAdminSubmit = (e) => {
     e.preventDefault()
-    setAdminError('')
+    setAdminApiError('')
+
+    const result = createOrgAdminSchema.safeParse(adminForm)
+    if (!result.success) { setAdminErrors(fieldErrors(result)); return }
+
+    setAdminErrors({})
     createAdminMutation.mutate({
-      full_name: adminForm.full_name,
-      username:  adminForm.username,
-      phone:     adminForm.phone,
-      email:     adminForm.email,
-      role:      'org_admin',
-      org_id:    createdOrg?.id,
+      ...result.data,
+      role:   'org_admin',
+      org_id: createdOrg?.id,
     })
   }
 
@@ -179,12 +199,10 @@ export default function OrgsPage() {
     }] : []),
   ]
 
-  // ── Dialog title / subtitle per step ──────────────────────────────────────
-
   const stepMeta = {
-    org:   { title: 'New Organization',            sub: 'Fill in the organization profile.' },
-    admin: { title: 'Create Org Admin (optional)',  sub: `Assign an admin to "${createdOrg?.name}". You can skip and do this later from the Users page.` },
-    done:  { title: 'All done!',                   sub: 'Organization and admin account created.' },
+    org:   { title: 'New Organization',           sub: 'Fill in the organization profile.' },
+    admin: { title: 'Create Org Admin (optional)', sub: `Assign an admin to "${createdOrg?.name}". You can skip and do this later from the Users page.` },
+    done:  { title: 'All done!',                  sub: 'Organization and admin account created.' },
   }
 
   return (
@@ -232,7 +250,6 @@ export default function OrgsPage() {
             )}
           </DialogHeader>
 
-          {/* Step indicator */}
           {step !== 'done' && (
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <span className={step === 'org' ? 'text-primary font-semibold' : 'text-success font-semibold'}>
@@ -249,15 +266,16 @@ export default function OrgsPage() {
 
           {/* ── Step 1: Organization form ──────────────────────────────── */}
           {step === 'org' && (
-            <form onSubmit={handleOrgSubmit} className="flex flex-col gap-3">
+            <form onSubmit={handleOrgSubmit} className="flex flex-col gap-3" noValidate>
               <div className="flex flex-col gap-1.5">
                 <Label>Organization Name <span className="text-destructive">*</span></Label>
                 <Input
-                  required
                   placeholder="e.g. TechLearn Institute"
                   value={orgForm.name}
-                  onChange={(e) => setOrgForm({ ...orgForm, name: e.target.value })}
+                  onChange={(e) => { setOrgForm({ ...orgForm, name: e.target.value }); clearOrgField('name') }}
+                  aria-invalid={!!orgErrors.name}
                 />
+                <FieldError message={orgErrors.name} />
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -274,24 +292,26 @@ export default function OrgsPage() {
               <div className="flex flex-col gap-1.5">
                 <Label>Website URL</Label>
                 <Input
-                  type="url"
                   placeholder="https://example.com"
                   value={orgForm.website}
-                  onChange={(e) => setOrgForm({ ...orgForm, website: e.target.value })}
+                  onChange={(e) => { setOrgForm({ ...orgForm, website: e.target.value }); clearOrgField('website') }}
+                  aria-invalid={!!orgErrors.website}
                 />
+                <FieldError message={orgErrors.website} />
               </div>
 
               <div className="flex flex-col gap-1.5">
                 <Label>Logo URL</Label>
                 <Input
-                  type="url"
                   placeholder="https://example.com/logo.png"
                   value={orgForm.logo_url}
-                  onChange={(e) => setOrgForm({ ...orgForm, logo_url: e.target.value })}
+                  onChange={(e) => { setOrgForm({ ...orgForm, logo_url: e.target.value }); clearOrgField('logo_url') }}
+                  aria-invalid={!!orgErrors.logo_url}
                 />
+                <FieldError message={orgErrors.logo_url} />
               </div>
 
-              {orgError && <p className="text-xs text-destructive">{orgError}</p>}
+              {orgApiError && <p className="text-xs text-destructive">{orgApiError}</p>}
 
               <DialogFooter className="pt-1">
                 <Button variant="outline" type="button" onClick={closeDialog}>Cancel</Button>
@@ -304,8 +324,7 @@ export default function OrgsPage() {
 
           {/* ── Step 2: Org admin form ─────────────────────────────────── */}
           {step === 'admin' && (
-            <form onSubmit={handleAdminSubmit} className="flex flex-col gap-3">
-              {/* Org context badge */}
+            <form onSubmit={handleAdminSubmit} className="flex flex-col gap-3" noValidate>
               <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg">
                 <Building2 size={14} className="text-muted-foreground flex-shrink-0" />
                 <span className="text-sm font-medium text-foreground truncate">{createdOrg?.name}</span>
@@ -316,46 +335,49 @@ export default function OrgsPage() {
                 <div className="flex flex-col gap-1.5 col-span-2">
                   <Label>Full Name <span className="text-destructive">*</span></Label>
                   <Input
-                    required
                     placeholder="Jane Smith"
                     value={adminForm.full_name}
-                    onChange={(e) => setAdminForm({ ...adminForm, full_name: e.target.value })}
+                    onChange={(e) => { setAdminForm({ ...adminForm, full_name: e.target.value }); clearAdminField('full_name') }}
+                    aria-invalid={!!adminErrors.full_name}
                   />
+                  <FieldError message={adminErrors.full_name} />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
                   <Label>Username <span className="text-destructive">*</span></Label>
                   <Input
-                    required
                     placeholder="jane_smith"
                     value={adminForm.username}
-                    onChange={(e) => setAdminForm({ ...adminForm, username: e.target.value })}
+                    onChange={(e) => { setAdminForm({ ...adminForm, username: e.target.value }); clearAdminField('username') }}
+                    aria-invalid={!!adminErrors.username}
                   />
+                  <FieldError message={adminErrors.username} />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
                   <Label>Phone <span className="text-destructive">*</span></Label>
                   <Input
-                    required
                     placeholder="+1234567890"
                     value={adminForm.phone}
-                    onChange={(e) => setAdminForm({ ...adminForm, phone: e.target.value })}
+                    onChange={(e) => { setAdminForm({ ...adminForm, phone: e.target.value }); clearAdminField('phone') }}
+                    aria-invalid={!!adminErrors.phone}
                   />
+                  <FieldError message={adminErrors.phone} />
                 </div>
 
                 <div className="flex flex-col gap-1.5 col-span-2">
                   <Label>Email <span className="text-destructive">*</span></Label>
                   <Input
-                    required
-                    type="email"
                     placeholder="jane@example.com"
                     value={adminForm.email}
-                    onChange={(e) => setAdminForm({ ...adminForm, email: e.target.value })}
+                    onChange={(e) => { setAdminForm({ ...adminForm, email: e.target.value }); clearAdminField('email') }}
+                    aria-invalid={!!adminErrors.email}
                   />
+                  <FieldError message={adminErrors.email} />
                 </div>
               </div>
 
-              {adminError && <p className="text-xs text-destructive">{adminError}</p>}
+              {adminApiError && <p className="text-xs text-destructive">{adminApiError}</p>}
 
               <DialogFooter className="pt-1">
                 <Button variant="outline" type="button" onClick={closeDialog}>
@@ -370,7 +392,7 @@ export default function OrgsPage() {
             </form>
           )}
 
-          {/* ── Step 3: Done — show temp password ──────────────────────── */}
+          {/* ── Step 3: Done ───────────────────────────────────────────── */}
           {step === 'done' && (
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
