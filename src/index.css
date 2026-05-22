@@ -27,8 +27,8 @@
     --radius:                   0.75rem;
 
     /* ─── Sidebar — Teams-style dark rail ────────────────────────────────── */
-    --sidebar-bg:               224 28% 11%;   /* #151928 deep navy */
-    --sidebar-bg-elevated:      224 24% 16%;   /* #1C2338 hover */
+    --sidebar-bg:               224 28% 16%;   /* #1C2338 slightly lighter navy */
+    --sidebar-bg-elevated:      224 24% 21%;   /* #242E47 hover */
     --sidebar-fg:               220 20% 86%;   /* #D2D7EA body text */
     --sidebar-muted:            220 12% 62%;   /* #8F96A9 clearly visible on dark bg */
     --sidebar-border:           224 20% 19%;   /* #242C3F dividers */
