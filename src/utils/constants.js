@@ -31,4 +31,5 @@ export const NAV_ITEMS = [
   { path: '/analytics',      label: 'Analytics',      icon: 'BarChart2',       roles: ['super_admin', 'org_admin'] },
   { path: '/audit',          label: 'Audit Logs',     icon: 'ScrollText',      roles: ['super_admin'] },
   { path: '/announcements',  label: 'Announcements',  icon: 'Megaphone',       roles: ['super_admin'] },
+  { path: '/settings',       label: 'Settings',       icon: 'Settings',        roles: null },
 ];

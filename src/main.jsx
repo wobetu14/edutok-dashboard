@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from './components/ui/tooltip';
 import { AuthProvider } from './context/AuthContext';
+import { SettingsProvider } from './context/SettingsContext';
 import App from './App.jsx';
 import './index.css';
 
@@ -21,9 +22,11 @@ createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <TooltipProvider delayDuration={0}>
-            <App />
-          </TooltipProvider>
+          <SettingsProvider>
+            <TooltipProvider delayDuration={0}>
+              <App />
+            </TooltipProvider>
+          </SettingsProvider>
         </AuthProvider>
       </QueryClientProvider>
     </BrowserRouter>

@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Font-size scale — driven by SettingsContext via data-font-size on <html> */
+html[data-font-size="sm"] { font-size: 14px; }
+html[data-font-size="md"] { font-size: 16px; }
+html[data-font-size="lg"] { font-size: 18px; }
+
 @layer base {
   :root {
     /* ─── Light mode — EduTok + shadcn tokens ─────────────────────────────── */

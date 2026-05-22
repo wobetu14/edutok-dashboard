@@ -9,6 +9,7 @@ import CoursesPage from './pages/courses/CoursesPage';
 import AnalyticsPage from './pages/analytics/AnalyticsPage';
 import AuditPage from './pages/audit/AuditPage';
 import AnnouncementsPage from './pages/announcements/AnnouncementsPage';
+import SettingsPage from './pages/settings/SettingsPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 function RequireAuth({ children, roles }) {
@@ -57,6 +58,7 @@ export default function App() {
         />
 
         <Route path="/courses" element={<CoursesPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
 
         <Route
           path="/analytics"
