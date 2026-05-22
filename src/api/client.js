@@ -52,6 +52,18 @@ export const api = {
   listPending:      (params) => client.get('/admin/courses/pending', { params }),
   reviewCourse:     (id, data) => client.patch(`/admin/courses/${id}/review`, data),
 
+  // Profile (current user)
+  getMe:           ()       => client.get('/users/me'),
+  updateMe:        (data)   => client.patch('/users/me', data),
+  changePassword:  ({ current_password, new_password }) =>
+    client.patch('/users/me/password', { currentPassword: current_password, newPassword: new_password }),
+  uploadAvatar:    (file)   => {
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('resource_type', 'avatar')
+    return client.post('/media/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
+
   // Audit logs
   listAuditLogs:    (params) => client.get('/admin/audit-logs', { params }),
 

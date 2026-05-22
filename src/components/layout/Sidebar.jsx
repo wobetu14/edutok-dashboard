@@ -1,4 +1,4 @@
-import { NavLink, useMatch } from 'react-router-dom'
+import { NavLink, Link, useMatch } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Building2, BookOpen,
   BarChart2, ScrollText, Megaphone, Settings, LogOut,
@@ -121,7 +121,7 @@ export default function Sidebar({ collapsed, onToggle }) {
             <div className="flex flex-col items-center gap-2">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div style={{ cursor: 'default' }}>
+                  <Link to="/profile" title="My Profile">
                     <Avatar className="h-7 w-7" style={{ boxShadow: '0 0 0 2px rgba(255,255,255,0.12)' }}>
                       <AvatarImage src={user?.avatar_url} alt={user?.full_name} />
                       <AvatarFallback
@@ -131,7 +131,7 @@ export default function Sidebar({ collapsed, onToggle }) {
                         {initials(user?.full_name)}
                       </AvatarFallback>
                     </Avatar>
-                  </div>
+                  </Link>
                 </TooltipTrigger>
                 <TooltipContent side="right" sideOffset={8}>
                   <p className="font-semibold text-xs">{user?.full_name}</p>
@@ -154,7 +154,7 @@ export default function Sidebar({ collapsed, onToggle }) {
             </div>
           ) : (
             <>
-              <div className="sidebar-user-card">
+              <Link to="/profile" className="sidebar-user-card hover:bg-white/5 transition-colors duration-150 rounded-lg" title="My Profile">
                 <Avatar className="h-7 w-7 flex-shrink-0" style={{ boxShadow: '0 0 0 2px rgba(255,255,255,0.12)' }}>
                   <AvatarImage src={user?.avatar_url} alt={user?.full_name} />
                   <AvatarFallback
@@ -173,7 +173,7 @@ export default function Sidebar({ collapsed, onToggle }) {
                   </p>
                 </div>
                 <div className="sidebar-presence" title="Online" />
-              </div>
+              </Link>
 
               <button onClick={logout} className="sidebar-signout-btn group">
                 <LogOut size={14} className="flex-shrink-0" />
