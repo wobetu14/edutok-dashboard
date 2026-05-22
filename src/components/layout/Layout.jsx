@@ -17,7 +17,7 @@ export default function Layout() {
     })
 
   return (
-    <div className="flex min-h-screen" style={{ background: 'hsl(220 18% 96%)' }}>
+    <div className="flex min-h-screen bg-background">
       <Sidebar collapsed={collapsed} onToggle={toggle} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header onToggle={toggle} />

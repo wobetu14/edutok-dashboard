@@ -1,10 +1,15 @@
-import { Type } from 'lucide-react'
+import { Sun, Moon, Type } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { useSettings, FONT_SIZE_OPTIONS } from '@/context/SettingsContext'
 import { cn } from '@/lib/utils'
 
+const THEME_OPTIONS = [
+  { key: 'light', label: 'Light', Icon: Sun  },
+  { key: 'dark',  label: 'Dark',  Icon: Moon },
+]
+
 export default function SettingsPage() {
-  const { fontSize, setFontSize } = useSettings()
+  const { fontSize, setFontSize, theme, setTheme } = useSettings()
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-up">
@@ -12,6 +17,54 @@ export default function SettingsPage() {
         <h2 className="text-xl font-bold text-foreground">Settings</h2>
         <p className="text-sm text-muted-foreground mt-1">Manage your display preferences.</p>
       </div>
+
+      {/* Theme */}
+      <Card className="card-lift">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-lg bg-primary/10">
+              {theme === 'dark' ? <Moon size={16} className="text-primary" /> : <Sun size={16} className="text-primary" />}
+            </div>
+            <div>
+              <CardTitle className="text-base">Appearance</CardTitle>
+              <CardDescription className="text-xs mt-0.5">
+                Choose between light and dark interface.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent>
+          <div className="grid grid-cols-2 gap-3">
+            {THEME_OPTIONS.map(({ key, label, Icon }) => {
+              const active = theme === key
+              return (
+                <button
+                  key={key}
+                  onClick={() => setTheme(key)}
+                  className={cn(
+                    'relative flex flex-col items-center gap-3 p-5 rounded-xl border-2 transition-all duration-200',
+                    active
+                      ? 'border-primary bg-primary/5 shadow-sm'
+                      : 'border-border bg-card hover:border-primary/40 hover:bg-muted/50',
+                  )}
+                >
+                  {active && (
+                    <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-primary" />
+                  )}
+                  <Icon
+                    size={24}
+                    className={active ? 'text-primary' : 'text-muted-foreground'}
+                  />
+                  <span className={cn('text-sm font-medium', active ? 'text-primary' : 'text-muted-foreground')}>
+                    {label}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Font Size */}
       <Card className="card-lift">
@@ -30,7 +83,6 @@ export default function SettingsPage() {
         </CardHeader>
 
         <CardContent className="space-y-4">
-          {/* Picker */}
           <div className="grid grid-cols-3 gap-3">
             {FONT_SIZE_OPTIONS.map(({ key, label, px }) => {
               const active = fontSize === key
@@ -69,15 +121,9 @@ export default function SettingsPage() {
               Preview
             </p>
             <p className="text-2xl font-bold text-foreground leading-tight">EduTok Dashboard</p>
-            <p className="text-base text-foreground">
-              Manage your learning platform with ease.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Browse courses, users, and analytics in one place.
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Last updated · just now
-            </p>
+            <p className="text-base text-foreground">Manage your learning platform with ease.</p>
+            <p className="text-sm text-muted-foreground">Browse courses, users, and analytics in one place.</p>
+            <p className="text-xs text-muted-foreground">Last updated · just now</p>
           </div>
         </CardContent>
       </Card>

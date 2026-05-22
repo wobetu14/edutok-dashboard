@@ -48,6 +48,42 @@ html[data-font-size="lg"] { font-size: 18px; }
     --shadow-e16: 0 24px 64px rgba(0,0,0,0.16), 0 8px 20px rgba(0,0,0,0.09);
   }
 
+  /* ─── Dark mode ─────────────────────────────────────────────────────────── */
+  .dark {
+    --background:               222 47% 11%;
+    --foreground:               210 40% 98%;
+    --card:                     222 44% 14%;
+    --card-foreground:          210 40% 98%;
+    --popover:                  222 44% 14%;
+    --popover-foreground:       210 40% 98%;
+    --primary:                  348 99% 58%;
+    --primary-foreground:       0 0% 100%;
+    --secondary:                178 90% 55%;
+    --secondary-foreground:     222 47% 11%;
+    --muted:                    217 33% 18%;
+    --muted-foreground:         215 20% 60%;
+    --accent:                   217 33% 18%;
+    --accent-foreground:        210 40% 98%;
+    --destructive:              0 62% 50%;
+    --destructive-foreground:   0 0% 100%;
+    --border:                   217 33% 20%;
+    --input:                    217 33% 20%;
+    --ring:                     348 99% 58%;
+
+    --sidebar-bg:               222 47% 8%;
+    --sidebar-bg-elevated:      222 44% 13%;
+    --sidebar-fg:               220 20% 86%;
+    --sidebar-muted:            220 12% 55%;
+    --sidebar-border:           222 33% 16%;
+    --sidebar-active-bg:        348 80% 60% / 0.13;
+
+    --shadow-e1:  0 1px 3px rgba(0,0,0,0.30), 0 1px 2px rgba(0,0,0,0.20);
+    --shadow-e2:  0 3px 8px rgba(0,0,0,0.35), 0 1px 3px rgba(0,0,0,0.22);
+    --shadow-e4:  0 6px 22px rgba(0,0,0,0.40), 0 2px 6px rgba(0,0,0,0.25);
+    --shadow-e8:  0 12px 40px rgba(0,0,0,0.45), 0 4px 10px rgba(0,0,0,0.28);
+    --shadow-e16: 0 24px 64px rgba(0,0,0,0.50), 0 8px 20px rgba(0,0,0,0.30);
+  }
+
   * { box-sizing: border-box; }
 
   body {
@@ -372,6 +408,29 @@ html[data-font-size="lg"] { font-size: 18px; }
       inset 0 1px 0 rgba(255,255,255,0.9);
   }
 
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     DARK MODE OVERRIDES — hardcoded colours that need explicit dark rules
+  ═══════════════════════════════════════════════════════════════════════ */
+
+  .dark .header-glass {
+    background: rgba(14, 18, 35, 0.88);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.03), var(--shadow-e1);
+  }
+
+  .dark .login-bg {
+    background:
+      radial-gradient(ellipse 80% 60% at 60% -10%, rgba(254,44,85,0.10) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at -10% 80%, rgba(37,244,238,0.08) 0%, transparent 60%),
+      hsl(var(--background));
+  }
+
+  .dark .login-card {
+    background: rgba(20, 25, 44, 0.92);
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: var(--shadow-e8), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
 
   /* ═══════════════════════════════════════════════════════════════════════
      LEGACY UTILITIES (kept for backward compat)

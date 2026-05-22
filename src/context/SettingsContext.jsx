@@ -6,26 +6,47 @@ export const FONT_SIZE_OPTIONS = [
   { key: 'lg', label: 'Large',  px: 18 },
 ]
 
-const STORAGE_KEY = 'edutok-font-size'
-
 const SettingsContext = createContext(null)
 
 export function SettingsProvider({ children }) {
   const [fontSize, setFontSizeState] = useState(
-    () => localStorage.getItem(STORAGE_KEY) || 'lg',
+    () => localStorage.getItem('edutok-font-size') || 'lg',
   )
 
+  const [theme, setThemeState] = useState(
+    () => localStorage.getItem('edutok-theme') || 'light',
+  )
+
+  // Apply font size
   useEffect(() => {
     document.documentElement.setAttribute('data-font-size', fontSize)
   }, [fontSize])
 
+  // Apply theme
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  }, [theme])
+
   function setFontSize(key) {
-    localStorage.setItem(STORAGE_KEY, key)
+    localStorage.setItem('edutok-font-size', key)
     setFontSizeState(key)
   }
 
+  function setTheme(t) {
+    localStorage.setItem('edutok-theme', t)
+    setThemeState(t)
+  }
+
+  function toggleTheme() {
+    setTheme(theme === 'dark' ? 'light' : 'dark')
+  }
+
   return (
-    <SettingsContext.Provider value={{ fontSize, setFontSize }}>
+    <SettingsContext.Provider value={{ fontSize, setFontSize, theme, setTheme, toggleTheme }}>
       {children}
     </SettingsContext.Provider>
   )
