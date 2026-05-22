@@ -98,7 +98,8 @@ export default function LoginPage() {
               )}
 
               <Button type="submit" className="w-full mt-1" disabled={loading}>
-                {loading ? <Spinner size="sm" /> : 'Sign in'}
+                {loading && <Spinner size="sm" className="border-current border-t-transparent" />}
+                {loading ? 'Signing in…' : 'Sign in'}
               </Button>
             </form>
           </CardContent>

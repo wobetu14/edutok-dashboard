@@ -97,6 +97,20 @@ html[data-font-size="lg"] { font-size: 18px; }
   ::-webkit-scrollbar-track  { background: transparent; }
   ::-webkit-scrollbar-thumb  { background: hsl(var(--border)); border-radius: 99px; }
   ::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.5); }
+
+  /* Smooth MUI-style transitions for all native form controls */
+  input, textarea, select {
+    border-width: 2px;
+    transition: border-color 0.2s ease-out, box-shadow 0.2s ease-out, background-color 0.2s ease-out;
+  }
+  input:hover:not(:disabled), textarea:hover:not(:disabled), select:hover:not(:disabled) {
+    border-color: hsl(var(--foreground) / 0.25);
+  }
+  input:focus:not(:disabled), textarea:focus:not(:disabled), select:focus:not(:disabled) {
+    outline: none;
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 0 3px rgba(254, 44, 85, 0.15);
+  }
 }
 
 @layer components {
@@ -466,7 +480,7 @@ html[data-font-size="lg"] { font-size: 18px; }
     box-shadow: 0 2px 8px rgba(239,68,68,0.28);
   }
   .input {
-    @apply w-full px-3 py-2 rounded-lg border border-border bg-card text-sm text-foreground
+    @apply w-full px-3 py-2 rounded-lg border-2 border-border bg-card text-sm text-foreground
            placeholder:text-muted-foreground focus:outline-none
            focus:border-primary transition-all duration-200;
     box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);

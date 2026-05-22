@@ -33,12 +33,26 @@ export default function UsersPage() {
   const [tempPassword, setTempPassword] = useState('')
   const [formError, setFormError]       = useState('')
 
+  // Org combobox state
+  const [orgSearch, setOrgSearch]   = useState('')
+  const [orgDropOpen, setOrgDropOpen] = useState(false)
+  const [selectedOrg, setSelectedOrg] = useState(null)
+
   const { data, isLoading } = useQuery({
     queryKey: ['users', page, search, roleFilter],
     queryFn: () =>
       api.listUsers({ page, limit: LIMIT, search: search || undefined, role: roleFilter || undefined })
         .then((r) => ({ users: r.data.data, total: r.data.meta?.total ?? 0 })),
     keepPreviousData: true,
+  })
+
+  const { data: orgOptions = [] } = useQuery({
+    queryKey: ['orgs-picker', orgSearch],
+    queryFn: () =>
+      api.listOrgs({ search: orgSearch || undefined, limit: 30 })
+        .then((r) => r.data.data ?? []),
+    enabled: modal,
+    staleTime: 30_000,
   })
 
   const createUser = useMutation({
@@ -58,6 +72,10 @@ export default function UsersPage() {
   const handleCreate = (e) => {
     e.preventDefault()
     setFormError('')
+    if (!form.org_id) {
+      setFormError('Please select an organization.')
+      return
+    }
     createUser.mutate(form)
   }
 
@@ -66,6 +84,9 @@ export default function UsersPage() {
     setTempPassword('')
     setFormError('')
     setForm({ full_name: '', username: '', phone: '', email: '', role: 'instructor', org_id: '' })
+    setOrgSearch('')
+    setSelectedOrg(null)
+    setOrgDropOpen(false)
   }
 
   const columns = [
@@ -204,7 +225,7 @@ export default function UsersPage() {
               <div className="flex flex-col gap-1.5">
                 <Label>Role</Label>
                 <select
-                  className="h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="h-10 px-3 rounded-md border border-input bg-background text-sm"
                   value={form.role}
                   onChange={(e) => setForm({ ...form, role: e.target.value })}
                 >
@@ -212,15 +233,50 @@ export default function UsersPage() {
                   <option value="org_admin">Org Admin</option>
                 </select>
               </div>
-              <div className="flex flex-col gap-1.5">
-                <Label>Organization ID</Label>
-                <Input required value={form.org_id} onChange={(e) => setForm({ ...form, org_id: e.target.value })} placeholder="cuid…" />
+              <div className="flex flex-col gap-1.5 relative">
+                <Label>Organization</Label>
+                <Input
+                  placeholder="Search organization…"
+                  autoComplete="off"
+                  value={selectedOrg ? selectedOrg.name : orgSearch}
+                  onChange={(e) => {
+                    setOrgSearch(e.target.value)
+                    setSelectedOrg(null)
+                    setForm((f) => ({ ...f, org_id: '' }))
+                    setOrgDropOpen(true)
+                  }}
+                  onFocus={() => { if (!selectedOrg) setOrgDropOpen(true) }}
+                  onBlur={() => setTimeout(() => setOrgDropOpen(false), 150)}
+                />
+                {orgDropOpen && orgOptions.length > 0 && (
+                  <div className="absolute top-[calc(100%+2px)] left-0 right-0 z-50 bg-popover border border-border rounded-md shadow-lg max-h-44 overflow-y-auto">
+                    {orgOptions.map((org) => (
+                      <button
+                        key={org.id}
+                        type="button"
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors duration-150"
+                        onMouseDown={() => {
+                          setSelectedOrg(org)
+                          setForm((f) => ({ ...f, org_id: org.id }))
+                          setOrgSearch('')
+                          setOrgDropOpen(false)
+                        }}
+                      >
+                        {org.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {!selectedOrg && !orgDropOpen && form.org_id === '' && orgSearch === '' && (
+                  <p className="text-[11px] text-muted-foreground">Type to search organizations by name</p>
+                )}
               </div>
               {formError && <p className="text-xs text-destructive">{formError}</p>}
               <div className="flex gap-2 justify-end pt-1">
                 <Button variant="outline" type="button" onClick={closeModal}>Cancel</Button>
                 <Button type="submit" disabled={createUser.isPending}>
-                  {createUser.isPending ? <Spinner size="sm" /> : 'Create User'}
+                  {createUser.isPending && <Spinner size="sm" className="border-current border-t-transparent" />}
+                  {createUser.isPending ? 'Creating…' : 'Create User'}
                 </Button>
               </div>
             </form>
