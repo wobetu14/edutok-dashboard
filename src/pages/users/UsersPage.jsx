@@ -453,32 +453,42 @@ export default function UsersPage() {
                 <FieldError message={createErrors.email} />
               </div>
 
-              {/* Role — super_admin can pick org_admin or instructor; org_admin can only create instructors */}
+              {/* Role — super_admin can pick any staff role; org_admin can only create instructors */}
               {isSuperAdmin && (
                 <div className="flex flex-col gap-1.5">
                   <Label>Role <span className="text-destructive">*</span></Label>
                   <select
                     className="h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
                     value={createForm.role}
-                    onChange={(e) => { setCreateForm({ ...createForm, role: e.target.value }); clearCreateField('role') }}
+                    onChange={(e) => {
+                      setCreateForm({ ...createForm, role: e.target.value, org_id: '' })
+                      setCreateSelectedOrg(null)
+                      setCreateOrgSearch('')
+                      clearCreateField('role')
+                      clearCreateField('org_id')
+                    }}
                   >
                     <option value="instructor">Instructor</option>
                     <option value="org_admin">Org Admin</option>
+                    <option value="super_admin">Super Admin</option>
                   </select>
                   <FieldError message={createErrors.role} />
                 </div>
               )}
 
-              <OrgCombobox
-                orgSearch={createOrgSearch}
-                setOrgSearch={setCreateOrgSearch}
-                selectedOrg={createSelectedOrg}
-                setSelectedOrg={setCreateSelectedOrg}
-                onSelect={(id) => setCreateForm((f) => ({ ...f, org_id: id }))}
-                error={createErrors.org_id}
-                clearError={() => clearCreateField('org_id')}
-                enabled={createOpen}
-              />
+              {/* Org picker — hidden for super_admin (they don't belong to an org) */}
+              {createForm.role !== 'super_admin' && (
+                <OrgCombobox
+                  orgSearch={createOrgSearch}
+                  setOrgSearch={setCreateOrgSearch}
+                  selectedOrg={createSelectedOrg}
+                  setSelectedOrg={setCreateSelectedOrg}
+                  onSelect={(id) => setCreateForm((f) => ({ ...f, org_id: id }))}
+                  error={createErrors.org_id}
+                  clearError={() => clearCreateField('org_id')}
+                  enabled={createOpen}
+                />
+              )}
 
               {createApiErr && <p className="text-xs text-destructive">{createApiErr}</p>}
 

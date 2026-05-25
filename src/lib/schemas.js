@@ -37,9 +37,12 @@ export const createUserSchema = z.object({
   username:  usernameRule,
   phone:     phoneRule,
   email:     optionalEmail,
-  role:      z.enum(['instructor', 'org_admin']),
-  org_id:    z.string().min(1, 'Please select an organization'),
-})
+  role:      z.enum(['instructor', 'org_admin', 'super_admin']),
+  org_id:    z.string().optional(),
+}).refine(
+  (d) => d.role === 'super_admin' || (d.org_id && d.org_id.length > 0),
+  { message: 'Please select an organization', path: ['org_id'] },
+)
 
 export const createOrgSchema = z.object({
   name:        z.string().min(2, 'Name must be at least 2 characters'),
