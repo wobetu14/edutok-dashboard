@@ -71,7 +71,7 @@ export const api = {
   listAuditLogs:    (params) => client.get('/admin/audit-logs', { params }),
 
   // Announcements
-  listAnnouncements:   (params) => client.get('/admin/announcements', { params }),
+  listAnnouncements:   (params) => client.get('/admin/announcements', { params: { limit: 10, ...params } }),
   createAnnouncement:  (data)   => client.post('/admin/announcements', data),
   deleteAnnouncement:  (id)     => client.delete(`/admin/announcements/${id}`),
 

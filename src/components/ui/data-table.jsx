@@ -6,6 +6,13 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
+function pageNumbers(current, total) {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+  if (current <= 4) return [1, 2, 3, 4, 5, '…', total]
+  if (current >= total - 3) return [1, '…', total - 4, total - 3, total - 2, total - 1, total]
+  return [1, '…', current - 1, current, current + 1, '…', total]
+}
+
 export function DataTable({
   columns,
   rows,
@@ -17,6 +24,8 @@ export function DataTable({
   onPageChange,
 }) {
   const totalPages = limit && total ? Math.ceil(total / limit) : 0
+  const start = total === 0 ? 0 : (page - 1) * limit + 1
+  const end   = Math.min(page * limit, total)
 
   return (
     <>
@@ -33,7 +42,7 @@ export function DataTable({
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              Array.from({ length: 6 }).map((_, i) => (
+              Array.from({ length: limit ?? 10 }).map((_, i) => (
                 <TableRow key={i}>
                   {columns.map((col) => (
                     <TableCell key={col.key}>
@@ -73,29 +82,52 @@ export function DataTable({
         </Table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+      {totalPages > 0 && (
+        <div className="flex items-center justify-between px-4 py-3 border-t border-border flex-wrap gap-2">
           <p className="text-xs text-muted-foreground">
-            Page {page} of {totalPages} &middot; {total} total
+            {total > 0 ? `${start}–${end} of ${total}` : '0 results'}
           </p>
-          <div className="flex gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPageChange(page - 1)}
-              disabled={page <= 1}
-            >
-              <ChevronLeft size={14} />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPageChange(page + 1)}
-              disabled={page >= totalPages}
-            >
-              <ChevronRight size={14} />
-            </Button>
-          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1">
+              {/* Prev */}
+              <Button
+                variant="outline" size="sm"
+                onClick={() => onPageChange(page - 1)}
+                disabled={page <= 1}
+                className="h-7 w-7 p-0"
+              >
+                <ChevronLeft size={13} />
+              </Button>
+
+              {/* Page number buttons */}
+              {pageNumbers(page, totalPages).map((p, i) =>
+                p === '…' ? (
+                  <span key={`ellipsis-${i}`} className="text-xs text-muted-foreground px-1 select-none">…</span>
+                ) : (
+                  <Button
+                    key={p}
+                    variant={p === page ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => onPageChange(p)}
+                    className={cn('h-7 w-7 p-0 text-xs', p === page && 'pointer-events-none')}
+                  >
+                    {p}
+                  </Button>
+                )
+              )}
+
+              {/* Next */}
+              <Button
+                variant="outline" size="sm"
+                onClick={() => onPageChange(page + 1)}
+                disabled={page >= totalPages}
+                className="h-7 w-7 p-0"
+              >
+                <ChevronRight size={13} />
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </>

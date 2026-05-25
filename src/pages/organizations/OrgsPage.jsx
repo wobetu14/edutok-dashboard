@@ -18,7 +18,7 @@ import { api } from '@/api/client'
 import { useAuth } from '@/context/AuthContext'
 import { createOrgSchema, createOrgAdminSchema, fieldErrors } from '@/lib/schemas'
 
-const LIMIT = 20
+const LIMIT = 10
 
 function initials(name = '') {
   return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()

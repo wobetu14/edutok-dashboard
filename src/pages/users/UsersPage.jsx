@@ -18,7 +18,7 @@ import { ROLES } from '@/utils/constants'
 import { useAuth } from '@/context/AuthContext'
 import { createUserSchema, updateUserSchema, reassignOrgSchema, fieldErrors } from '@/lib/schemas'
 
-const LIMIT = 20
+const LIMIT = 10
 
 function initials(name = '') {
   return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()

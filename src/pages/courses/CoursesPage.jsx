@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils'
 import { FieldError } from '@/components/ui/FieldError'
 import { rejectReasonSchema } from '@/lib/schemas'
 
-const LIMIT = 20
+const LIMIT = 10
 
 const TABS = [
   { key: 'pending',  label: 'Pending Review' },

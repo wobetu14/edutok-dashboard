@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card'
 import { DataTable } from '@/components/ui/data-table'
 import { api } from '@/api/client'
 
-const LIMIT = 30
+const LIMIT = 10
 
 export default function AuditPage() {
   const [page, setPage] = useState(1)

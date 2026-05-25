@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { api } from '@/api/client'
 import { COURSE_STATUS, COURSE_VISIBILITY, DIFFICULTY } from '@/utils/constants'
 
-const LIMIT = 20
+const LIMIT = 10
 
 export default function CategoryDetailPage() {
   const { categoryId } = useParams()
