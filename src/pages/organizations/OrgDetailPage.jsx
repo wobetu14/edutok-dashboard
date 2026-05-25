@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft, Building2, Globe, Calendar, Users, BookOpen,
   Pencil, PowerOff, Trash2, ShieldCheck, ShieldOff, AlertTriangle,
-  UserCheck, Crown,
+  UserCheck, Crown, Phone, Mail, PhoneCall,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { DataTable } from '@/components/ui/data-table'
@@ -63,7 +63,7 @@ export default function OrgDetailPage() {
 
   // ── Edit state ─────────────────────────────────────────────────────────
   const [editOpen, setEditOpen]       = useState(false)
-  const [editForm, setEditForm]       = useState({ name: '', description: '', website: '', logo_url: '' })
+  const [editForm, setEditForm]       = useState({ name: '', description: '', website: '', logo_url: '', mobile: '', telephone: '', email: '' })
   const [editErrors, setEditErrors]   = useState({})
   const [editApiError, setEditApiError] = useState('')
 
@@ -136,6 +136,9 @@ export default function OrgDetailPage() {
       description: org?.description ?? '',
       website:     org?.website ?? '',
       logo_url:    org?.logo_url ?? '',
+      mobile:      org?.mobile ?? '',
+      telephone:   org?.telephone ?? '',
+      email:       org?.email ?? '',
     })
     setEditErrors({})
     setEditApiError('')
@@ -151,8 +154,11 @@ export default function OrgDetailPage() {
     const body = {}
     if (result.data.name !== org?.name)                           body.name        = result.data.name
     if ((result.data.description ?? '') !== (org?.description ?? '')) body.description = result.data.description
-    if ((result.data.website  ?? '') !== (org?.website  ?? ''))   body.website  = result.data.website  || null
-    if ((result.data.logo_url ?? '') !== (org?.logo_url ?? ''))   body.logo_url = result.data.logo_url || null
+    if ((result.data.website   ?? '') !== (org?.website   ?? ''))  body.website   = result.data.website   || null
+    if ((result.data.logo_url  ?? '') !== (org?.logo_url  ?? ''))  body.logo_url  = result.data.logo_url  || null
+    if ((result.data.mobile    ?? '') !== (org?.mobile    ?? ''))  body.mobile    = result.data.mobile    || null
+    if ((result.data.telephone ?? '') !== (org?.telephone ?? ''))  body.telephone = result.data.telephone || null
+    if ((result.data.email     ?? '') !== (org?.email     ?? ''))  body.email     = result.data.email     || null
     if (Object.keys(body).length === 0) { setEditOpen(false); return }
     updateOrgMutation.mutate(body)
   }
@@ -383,6 +389,38 @@ export default function OrgDetailPage() {
         </Card>
       )}
 
+      {/* ── Contact information ─────────────────────────────────────────── */}
+      {(org.mobile || org.telephone || org.email) && (
+        <Card>
+          <CardContent className="p-4 flex flex-col gap-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Contact Information</p>
+            <div className="flex flex-col gap-2">
+              {org.mobile && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Phone size={14} className="text-muted-foreground flex-shrink-0" />
+                  <span className="text-muted-foreground w-20 text-xs">Mobile</span>
+                  <a href={`tel:${org.mobile}`} className="text-foreground hover:text-primary transition-colors">{org.mobile}</a>
+                </div>
+              )}
+              {org.telephone && (
+                <div className="flex items-center gap-2 text-sm">
+                  <PhoneCall size={14} className="text-muted-foreground flex-shrink-0" />
+                  <span className="text-muted-foreground w-20 text-xs">Telephone</span>
+                  <a href={`tel:${org.telephone}`} className="text-foreground hover:text-primary transition-colors">{org.telephone}</a>
+                </div>
+              )}
+              {org.email && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Mail size={14} className="text-muted-foreground flex-shrink-0" />
+                  <span className="text-muted-foreground w-20 text-xs">Email</span>
+                  <a href={`mailto:${org.email}`} className="text-foreground hover:text-primary transition-colors">{org.email}</a>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* ── Owner detail ────────────────────────────────────────────────── */}
       {org.owner && (
         <Card>
@@ -507,6 +545,39 @@ export default function OrgDetailPage() {
                 aria-invalid={!!editErrors.website}
               />
               <FieldError message={editErrors.website} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <Label>Mobile</Label>
+                <Input
+                  placeholder="+251912345678"
+                  value={editForm.mobile}
+                  onChange={(e) => { setEditForm({ ...editForm, mobile: e.target.value }); setEditErrors((p) => { const n = { ...p }; delete n.mobile; return n }) }}
+                  aria-invalid={!!editErrors.mobile}
+                />
+                <FieldError message={editErrors.mobile} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Telephone</Label>
+                <Input
+                  placeholder="+251112345678"
+                  value={editForm.telephone}
+                  onChange={(e) => { setEditForm({ ...editForm, telephone: e.target.value }); setEditErrors((p) => { const n = { ...p }; delete n.telephone; return n }) }}
+                  aria-invalid={!!editErrors.telephone}
+                />
+                <FieldError message={editErrors.telephone} />
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>Email Address</Label>
+              <Input
+                type="email"
+                placeholder="contact@organization.com"
+                value={editForm.email}
+                onChange={(e) => { setEditForm({ ...editForm, email: e.target.value }); setEditErrors((p) => { const n = { ...p }; delete n.email; return n }) }}
+                aria-invalid={!!editErrors.email}
+              />
+              <FieldError message={editErrors.email} />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label>Organization Logo</Label>

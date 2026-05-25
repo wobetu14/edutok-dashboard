@@ -19,6 +19,12 @@ const optionalUrl = z.preprocess(
   z.string().url('Must be a valid URL starting with https://').optional(),
 )
 
+// Empty string → treated as absent; non-empty → validated as phone
+const optionalPhone = z.preprocess(
+  (v) => (v === '' ? undefined : v),
+  z.string().regex(/^\+?[\d\s\-()+]{7,30}$/, 'Enter a valid phone number (e.g. +251912345678)').optional(),
+)
+
 // Empty string → treated as absent; non-empty → validated as email
 const optionalEmail = z.preprocess(
   (v) => (v === '' ? undefined : v),
@@ -49,6 +55,9 @@ export const createOrgSchema = z.object({
   description: z.string().optional(),
   website:     optionalUrl,
   logo_url:    optionalUrl,
+  mobile:      optionalPhone,
+  telephone:   optionalPhone,
+  email:       optionalEmail,
 })
 
 export const createOrgAdminSchema = z.object({
@@ -70,6 +79,9 @@ export const updateOrgSchema = z.object({
   description: z.string().optional(),
   website:     optionalUrl,
   logo_url:    optionalUrl,
+  mobile:      optionalPhone,
+  telephone:   optionalPhone,
+  email:       optionalEmail,
 })
 
 export const createCategorySchema = z.object({

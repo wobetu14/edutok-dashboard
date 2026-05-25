@@ -30,7 +30,7 @@ function initials(name = '') {
   return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
 }
 
-const EMPTY_ORG   = { name: '', description: '', website: '', logo_url: '' }
+const EMPTY_ORG   = { name: '', description: '', website: '', logo_url: '', mobile: '', telephone: '', email: '' }
 const EMPTY_ADMIN = { full_name: '', username: '', phone: '', email: '' }
 
 // ── OrgStatusBadge ─────────────────────────────────────────────────────────
@@ -186,11 +186,14 @@ export default function OrgsPage() {
     const result = createOrgSchema.safeParse(orgForm)
     if (!result.success) { setOrgErrors(fieldErrors(result)); return }
     setOrgErrors({})
-    const { name, description, website, logo_url } = result.data
+    const { name, description, website, logo_url, mobile, telephone, email } = result.data
     const body = { name }
     if (description) body.description = description
     if (website)     body.website     = website
     if (logo_url)    body.logo_url    = logo_url
+    if (mobile)      body.mobile      = mobile
+    if (telephone)   body.telephone   = telephone
+    if (email)       body.email       = email
     createOrgMutation.mutate(body)
   }
 
@@ -206,7 +209,7 @@ export default function OrgsPage() {
 
   const openEdit = (row) => {
     setEditTarget(row)
-    setEditForm({ name: row.name, description: row.description ?? '', website: row.website ?? '', logo_url: row.logo_url ?? '' })
+    setEditForm({ name: row.name, description: row.description ?? '', website: row.website ?? '', logo_url: row.logo_url ?? '', mobile: row.mobile ?? '', telephone: row.telephone ?? '', email: row.email ?? '' })
     setEditErrors({}); setEditApiError('')
   }
 
@@ -218,8 +221,11 @@ export default function OrgsPage() {
     const body = {}
     if (result.data.name !== editTarget.name)                 body.name        = result.data.name
     if (result.data.description !== editTarget.description)   body.description = result.data.description
-    if ((result.data.website ?? '') !== (editTarget.website ?? ''))   body.website = result.data.website || null
-    if ((result.data.logo_url ?? '') !== (editTarget.logo_url ?? '')) body.logo_url = result.data.logo_url || null
+    if ((result.data.website   ?? '') !== (editTarget.website   ?? '')) body.website   = result.data.website   || null
+    if ((result.data.logo_url  ?? '') !== (editTarget.logo_url  ?? '')) body.logo_url  = result.data.logo_url  || null
+    if ((result.data.mobile    ?? '') !== (editTarget.mobile    ?? '')) body.mobile    = result.data.mobile    || null
+    if ((result.data.telephone ?? '') !== (editTarget.telephone ?? '')) body.telephone = result.data.telephone || null
+    if ((result.data.email     ?? '') !== (editTarget.email     ?? '')) body.email     = result.data.email     || null
     if (Object.keys(body).length === 0) { setEditTarget(null); return }
     updateOrgMutation.mutate({ id: editTarget.id, data: body })
   }
@@ -548,6 +554,39 @@ export default function OrgsPage() {
                 />
                 <FieldError message={orgErrors.website} />
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <Label>Mobile</Label>
+                  <Input
+                    placeholder="+251912345678"
+                    value={orgForm.mobile}
+                    onChange={(e) => { setOrgForm({ ...orgForm, mobile: e.target.value }); clearOrgField('mobile') }}
+                    aria-invalid={!!orgErrors.mobile}
+                  />
+                  <FieldError message={orgErrors.mobile} />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label>Telephone</Label>
+                  <Input
+                    placeholder="+251111234567"
+                    value={orgForm.telephone}
+                    onChange={(e) => { setOrgForm({ ...orgForm, telephone: e.target.value }); clearOrgField('telephone') }}
+                    aria-invalid={!!orgErrors.telephone}
+                  />
+                  <FieldError message={orgErrors.telephone} />
+                </div>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Email Address</Label>
+                <Input
+                  type="email"
+                  placeholder="contact@organization.com"
+                  value={orgForm.email}
+                  onChange={(e) => { setOrgForm({ ...orgForm, email: e.target.value }); clearOrgField('email') }}
+                  aria-invalid={!!orgErrors.email}
+                />
+                <FieldError message={orgErrors.email} />
+              </div>
               <div className="flex flex-col gap-1.5">
                 <Label>Organization Logo</Label>
                 <OrgLogoUpload
@@ -692,6 +731,39 @@ export default function OrgsPage() {
                 aria-invalid={!!editErrors.website}
               />
               <FieldError message={editErrors.website} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <Label>Mobile</Label>
+                <Input
+                  placeholder="+251912345678"
+                  value={editForm.mobile}
+                  onChange={(e) => { setEditForm({ ...editForm, mobile: e.target.value }); setEditErrors((p) => { const n = { ...p }; delete n.mobile; return n }) }}
+                  aria-invalid={!!editErrors.mobile}
+                />
+                <FieldError message={editErrors.mobile} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Telephone</Label>
+                <Input
+                  placeholder="+251111234567"
+                  value={editForm.telephone}
+                  onChange={(e) => { setEditForm({ ...editForm, telephone: e.target.value }); setEditErrors((p) => { const n = { ...p }; delete n.telephone; return n }) }}
+                  aria-invalid={!!editErrors.telephone}
+                />
+                <FieldError message={editErrors.telephone} />
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>Email Address</Label>
+              <Input
+                type="email"
+                placeholder="contact@organization.com"
+                value={editForm.email}
+                onChange={(e) => { setEditForm({ ...editForm, email: e.target.value }); setEditErrors((p) => { const n = { ...p }; delete n.email; return n }) }}
+                aria-invalid={!!editErrors.email}
+              />
+              <FieldError message={editErrors.email} />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label>Organization Logo</Label>
