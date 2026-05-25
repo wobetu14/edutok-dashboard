@@ -160,7 +160,7 @@ export default function CoursesPage() {
 
       {/* Review dialog */}
       <Dialog open={!!reviewModal} onOpenChange={(open) => { if (!open) { setModal(null); setRejectReason(''); setRejectError(''); setActionError('') } }}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
               {reviewModal?.action === 'approve' ? 'Approve Course' : 'Reject Course'}

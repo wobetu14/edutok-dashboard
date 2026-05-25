@@ -87,6 +87,9 @@ export default function OrgsPage() {
   const [suspendReason, setSuspendReason] = useState('')
   const [suspendError, setSuspendError]   = useState('')
 
+  // ── Delete org state ───────────────────────────────────────────────────
+  const [deleteTarget, setDeleteTarget] = useState(null)
+
   // ── Review application state ───────────────────────────────────────────
   const [reviewTarget, setReviewTarget]   = useState(null)
   const [rejectReason, setRejectReason]   = useState('')
@@ -335,11 +338,7 @@ export default function OrgsPage() {
             variant="ghost" size="icon"
             className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
             title="Delete organization"
-            onClick={() => {
-              if (confirm(`Delete "${row.name}"? This cannot be undone.`)) {
-                deleteOrgMutation.mutate(row.id)
-              }
-            }}
+            onClick={() => setDeleteTarget(row)}
           >
             <Trash2 size={14} />
           </Button>
@@ -715,7 +714,7 @@ export default function OrgsPage() {
 
       {/* ── Activate / Deactivate dialog ───────────────────────────────── */}
       <Dialog open={!!activeTarget} onOpenChange={(open) => { if (!open) setActiveTarget(null) }}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
               {activeTarget?.is_active ? 'Suspend Organization' : 'Activate Organization'}
@@ -756,9 +755,52 @@ export default function OrgsPage() {
         </DialogContent>
       </Dialog>
 
+      {/* ── Delete org dialog ─────────────────────────────────────────── */}
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Organization</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 py-1">
+            {deleteTarget && (
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                <Avatar className="h-9 w-9">
+                  <AvatarImage src={deleteTarget.logo_url} alt={deleteTarget.name} />
+                  <AvatarFallback className="bg-secondary/20 text-secondary text-xs font-semibold">
+                    {initials(deleteTarget.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{deleteTarget.name}</p>
+                  {deleteTarget.website && (
+                    <p className="text-xs text-muted-foreground">{deleteTarget.website}</p>
+                  )}
+                </div>
+              </div>
+            )}
+            <p className="text-sm text-muted-foreground">
+              This will permanently delete <strong className="text-foreground">{deleteTarget?.name}</strong> and all its courses and members. This action cannot be undone.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancel</Button>
+            <Button
+              variant="destructive"
+              disabled={deleteOrgMutation.isPending}
+              onClick={() => {
+                deleteOrgMutation.mutate(deleteTarget.id)
+                setDeleteTarget(null)
+              }}
+            >
+              {deleteOrgMutation.isPending ? <Spinner size="sm" /> : 'Delete Organization'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* ── Review application dialog ──────────────────────────────────── */}
       <Dialog open={!!reviewTarget} onOpenChange={(open) => { if (!open) setReviewTarget(null) }}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Review Application</DialogTitle>
           </DialogHeader>

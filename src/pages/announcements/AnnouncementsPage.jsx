@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Trash2, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -35,11 +35,12 @@ const INIT_FORM = { title: '', body: '', target_role: '', expires_at: '' }
 
 export default function AnnouncementsPage() {
   const qc = useQueryClient()
-  const [page, setPage]     = useState(1)
-  const [modal, setModal]   = useState(false)
-  const [form, setForm]     = useState(INIT_FORM)
-  const [errors, setErrors] = useState({})
-  const [apiError, setApiError] = useState('')
+  const [page, setPage]           = useState(1)
+  const [modal, setModal]         = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [form, setForm]           = useState(INIT_FORM)
+  const [errors, setErrors]       = useState({})
+  const [apiError, setApiError]   = useState('')
 
   const { data, isLoading } = useQuery({
     queryKey: ['announcements', page],
@@ -65,7 +66,7 @@ export default function AnnouncementsPage() {
     mutationFn: (id) => api.deleteAnnouncement(id),
     onSuccess: () => {
       qc.invalidateQueries(['announcements'])
-      // If we deleted the last item on the current page, go back one
+      setDeleteTarget(null)
       if ((data?.announcements?.length ?? 0) === 1 && page > 1) setPage((p) => p - 1)
     },
   })
@@ -145,7 +146,7 @@ export default function AnnouncementsPage() {
                 <Button
                   variant="ghost" size="icon"
                   className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
-                  onClick={() => deleteMutation.mutate(a.id)}
+                  onClick={() => setDeleteTarget(a)}
                 >
                   <Trash2 size={15} />
                 </Button>
@@ -191,9 +192,40 @@ export default function AnnouncementsPage() {
         </div>
       )}
 
+      {/* ── Delete confirm dialog ── */}
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Announcement</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 py-1">
+            {deleteTarget && (
+              <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                <p className="text-sm font-semibold text-foreground">{deleteTarget.title}</p>
+                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{deleteTarget.body}</p>
+              </div>
+            )}
+            <div className="flex items-start gap-2 text-sm text-muted-foreground">
+              <AlertTriangle size={15} className="text-warning flex-shrink-0 mt-0.5" />
+              <span>This announcement will be permanently deleted and removed for all recipients.</span>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancel</Button>
+            <Button
+              variant="destructive"
+              disabled={deleteMutation.isPending}
+              onClick={() => deleteMutation.mutate(deleteTarget.id)}
+            >
+              {deleteMutation.isPending ? <Spinner size="sm" /> : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* ── Create dialog ── */}
       <Dialog open={modal} onOpenChange={(open) => { if (!open) setModal(false) }}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>New Announcement</DialogTitle>
           </DialogHeader>

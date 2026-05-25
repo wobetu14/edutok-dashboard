@@ -391,7 +391,7 @@ export default function UsersPage() {
 
       {/* ════════════ Create dialog ════════════ */}
       <Dialog open={createOpen} onOpenChange={(open) => { if (!open) closeCreate() }}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Add Managed User</DialogTitle>
           </DialogHeader>
@@ -505,7 +505,7 @@ export default function UsersPage() {
 
       {/* ════════════ Edit dialog ════════════ */}
       <Dialog open={!!editTarget} onOpenChange={(open) => { if (!open) setEditTarget(null) }}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Edit — {editTarget?.full_name}</DialogTitle>
           </DialogHeader>
@@ -558,7 +558,7 @@ export default function UsersPage() {
 
       {/* ════════════ Reset password dialog ════════════ */}
       <Dialog open={!!resetTarget} onOpenChange={(open) => { if (!open) closeReset() }}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Reset Password</DialogTitle>
           </DialogHeader>
@@ -598,7 +598,7 @@ export default function UsersPage() {
 
       {/* ════════════ Reassign org dialog (super_admin only) ════════════ */}
       <Dialog open={!!reassignTarget} onOpenChange={(open) => { if (!open) closeReassign() }}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Reassign Organization</DialogTitle>
           </DialogHeader>

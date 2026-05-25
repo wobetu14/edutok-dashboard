@@ -232,7 +232,7 @@ export default function CategoriesPage() {
 
       {/* ── Create dialog ── */}
       <Dialog open={createModal} onOpenChange={(open) => { if (!open) setCreateModal(false) }}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>New Category</DialogTitle>
           </DialogHeader>
@@ -326,7 +326,7 @@ export default function CategoriesPage() {
 
       {/* ── Edit dialog ── */}
       <Dialog open={!!editTarget} onOpenChange={(open) => { if (!open) setEditTarget(null) }}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Edit Category — {editTarget?.label}</DialogTitle>
           </DialogHeader>
@@ -406,7 +406,7 @@ export default function CategoriesPage() {
 
       {/* ── Delete confirm dialog ── */}
       <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Delete Category</DialogTitle>
           </DialogHeader>
