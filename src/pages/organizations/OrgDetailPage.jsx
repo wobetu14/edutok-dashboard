@@ -23,6 +23,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { api } from '@/api/client'
 import { updateOrgSchema, fieldErrors } from '@/lib/schemas'
+import { OrgLogoUpload } from '@/components/ui/OrgLogoUpload'
 import { COURSE_STATUS, COURSE_VISIBILITY, DIFFICULTY } from '@/utils/constants'
 
 const LIMIT = 10
@@ -508,14 +509,12 @@ export default function OrgDetailPage() {
               <FieldError message={editErrors.website} />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label>Logo URL</Label>
-              <Input
-                placeholder="https://example.com/logo.png"
+              <Label>Organization Logo</Label>
+              <OrgLogoUpload
                 value={editForm.logo_url}
-                onChange={(e) => { setEditForm({ ...editForm, logo_url: e.target.value }); setEditErrors((p) => { const n = { ...p }; delete n.logo_url; return n }) }}
-                aria-invalid={!!editErrors.logo_url}
+                orgName={editForm.name}
+                onChange={(url) => { setEditForm((f) => ({ ...f, logo_url: url })); setEditErrors((p) => { const n = { ...p }; delete n.logo_url; return n }) }}
               />
-              <FieldError message={editErrors.logo_url} />
             </div>
             {editApiError && <p className="text-xs text-destructive">{editApiError}</p>}
             <DialogFooter className="pt-1">

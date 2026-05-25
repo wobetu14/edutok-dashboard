@@ -5,6 +5,7 @@ import {
   Building2, Plus, Search, Trash2, CheckCircle, UserPlus,
   Pencil, PowerOff, ClipboardList, CheckCheck, XCircle,
 } from 'lucide-react'
+import { OrgLogoUpload } from '@/components/ui/OrgLogoUpload'
 import { Card } from '@/components/ui/card'
 import { DataTable } from '@/components/ui/data-table'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
@@ -548,14 +549,12 @@ export default function OrgsPage() {
                 <FieldError message={orgErrors.website} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Logo URL</Label>
-                <Input
-                  placeholder="https://example.com/logo.png"
+                <Label>Organization Logo</Label>
+                <OrgLogoUpload
                   value={orgForm.logo_url}
-                  onChange={(e) => { setOrgForm({ ...orgForm, logo_url: e.target.value }); clearOrgField('logo_url') }}
-                  aria-invalid={!!orgErrors.logo_url}
+                  orgName={orgForm.name}
+                  onChange={(url) => { setOrgForm((f) => ({ ...f, logo_url: url })); clearOrgField('logo_url') }}
                 />
-                <FieldError message={orgErrors.logo_url} />
               </div>
               {orgApiError && <p className="text-xs text-destructive">{orgApiError}</p>}
               <DialogFooter className="pt-1">
@@ -695,14 +694,12 @@ export default function OrgsPage() {
               <FieldError message={editErrors.website} />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label>Logo URL</Label>
-              <Input
-                placeholder="https://example.com/logo.png"
+              <Label>Organization Logo</Label>
+              <OrgLogoUpload
                 value={editForm.logo_url}
-                onChange={(e) => { setEditForm({ ...editForm, logo_url: e.target.value }); setEditErrors((p) => { const n = { ...p }; delete n.logo_url; return n }) }}
-                aria-invalid={!!editErrors.logo_url}
+                orgName={editForm.name}
+                onChange={(url) => { setEditForm((f) => ({ ...f, logo_url: url })); setEditErrors((p) => { const n = { ...p }; delete n.logo_url; return n }) }}
               />
-              <FieldError message={editErrors.logo_url} />
             </div>
             {editApiError && <p className="text-xs text-destructive">{editApiError}</p>}
             <DialogFooter className="pt-1">
