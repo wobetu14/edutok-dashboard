@@ -90,16 +90,11 @@ export function OrgLogoUpload({ value, orgName = '', onChange, className }) {
               <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin flex-shrink-0" />
               Uploading…
             </div>
-          ) : value ? (
-            <>
-              <p className="text-sm font-medium text-foreground">Logo uploaded</p>
-              <p className="text-xs text-muted-foreground truncate">{value}</p>
-            </>
           ) : (
             <>
               <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
                 <Upload size={14} className="flex-shrink-0" />
-                Click to upload logo
+                {value ? 'Click to replace logo' : 'Click to upload logo'}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 JPG, PNG, WebP or GIF · max 5 MB
