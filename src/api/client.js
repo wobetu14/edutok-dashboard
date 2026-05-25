@@ -72,6 +72,9 @@ export const api = {
   createAnnouncement:  (data)   => client.post('/admin/announcements', data),
   deleteAnnouncement:  (id)     => client.delete(`/admin/announcements/${id}`),
 
+  // Courses (general listing with optional filters)
+  listCourses: (params) => client.get('/courses', { params }),
+
   // Categories (super_admin CRUD; GET is public)
   listCategories:   ()         => client.get('/categories'),
   createCategory:   (data)     => client.post('/categories', data),

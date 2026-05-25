@@ -10,6 +10,7 @@ import AnalyticsPage from './pages/analytics/AnalyticsPage';
 import AuditPage from './pages/audit/AuditPage';
 import AnnouncementsPage from './pages/announcements/AnnouncementsPage';
 import CategoriesPage from './pages/categories/CategoriesPage';
+import CategoryDetailPage from './pages/categories/CategoryDetailPage';
 import SettingsPage from './pages/settings/SettingsPage';
 import ProfilePage from './pages/profile/ProfilePage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -68,6 +69,14 @@ export default function App() {
           element={
             <RequireAuth roles={['super_admin']}>
               <CategoriesPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/categories/:categoryId"
+          element={
+            <RequireAuth roles={['super_admin']}>
+              <CategoryDetailPage />
             </RequireAuth>
           }
         />

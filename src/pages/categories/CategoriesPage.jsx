@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Pencil, Trash2, Tags } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
@@ -157,69 +158,74 @@ export default function CategoriesPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {categories.map((cat, i) => (
-            <Card
+            <Link
               key={cat.id}
-              className="animate-fade-up overflow-hidden"
-              style={{ animationDelay: `${i * 50}ms` }}
+              to={`/categories/${cat.id}`}
+              className="group block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
-              {/* Color accent strip */}
-              <div className="h-1.5 w-full" style={{ background: cat.color }} />
+              <Card
+                className="animate-fade-up overflow-hidden transition-shadow group-hover:shadow-md cursor-pointer"
+                style={{ animationDelay: `${i * 50}ms` }}
+              >
+                {/* Color accent strip */}
+                <div className="h-1.5 w-full transition-all group-hover:h-2" style={{ background: cat.color }} />
 
-              <CardContent className="p-4 flex flex-col gap-3">
-                {/* Icon + label row */}
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-white text-lg font-bold"
-                    style={{ background: cat.color + '33', color: cat.color }}
-                    title={`icon: ${cat.icon}`}
-                  >
-                    {cat.label.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm text-foreground truncate">{cat.label}</p>
-                    <p className="text-xs text-muted-foreground truncate font-mono">{cat.id}</p>
-                  </div>
-                </div>
-
-                {/* Stats + actions row */}
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">
-                    {cat.course_count} course{cat.course_count !== 1 ? 's' : ''}
-                  </span>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                      onClick={() => openEdit(cat)}
-                      title="Edit category"
+                <CardContent className="p-4 flex flex-col gap-3">
+                  {/* Icon + label row */}
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-white text-lg font-bold"
+                      style={{ background: cat.color + '33', color: cat.color }}
+                      title={`icon: ${cat.icon}`}
                     >
-                      <Pencil size={13} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => openDelete(cat)}
-                      title="Delete category"
-                    >
-                      <Trash2 size={13} />
-                    </Button>
+                      {cat.label.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-foreground truncate">{cat.label}</p>
+                      <p className="text-xs text-muted-foreground truncate font-mono">{cat.id}</p>
+                    </div>
                   </div>
-                </div>
 
-                {/* Icon name + color chip */}
-                <div className="flex items-center gap-2">
-                  <span
-                    className="inline-flex items-center gap-1 text-[10px] rounded-full px-2 py-0.5"
-                    style={{ background: cat.color + '22', color: cat.color }}
-                  >
-                    <span className="font-mono">{cat.icon}</span>
-                  </span>
-                  <span className="text-[10px] text-muted-foreground font-mono uppercase">{cat.color}</span>
-                </div>
-              </CardContent>
-            </Card>
+                  {/* Stats + actions row */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">
+                      {cat.course_count} course{cat.course_count !== 1 ? 's' : ''}
+                    </span>
+                    <div className="flex gap-1" onClick={(e) => e.preventDefault()}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                        onClick={(e) => { e.preventDefault(); openEdit(cat) }}
+                        title="Edit category"
+                      >
+                        <Pencil size={13} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        onClick={(e) => { e.preventDefault(); openDelete(cat) }}
+                        title="Delete category"
+                      >
+                        <Trash2 size={13} />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Icon name + color chip */}
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="inline-flex items-center gap-1 text-[10px] rounded-full px-2 py-0.5"
+                      style={{ background: cat.color + '22', color: cat.color }}
+                    >
+                      <span className="font-mono">{cat.icon}</span>
+                    </span>
+                    <span className="text-[10px] text-muted-foreground font-mono uppercase">{cat.color}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
       )}
