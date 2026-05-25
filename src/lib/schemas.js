@@ -78,6 +78,16 @@ export const updateCategorySchema = z.object({
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Must be a valid hex color (e.g. #FF6B35)').optional(),
 })
 
+export const updateUserSchema = z.object({
+  full_name: z.string().min(2, 'Full name must be at least 2 characters').optional(),
+  phone:     phoneRule.optional(),
+  email:     optionalEmail,
+})
+
+export const reassignOrgSchema = z.object({
+  org_id: z.string().min(1, 'Please select an organization'),
+})
+
 export const rejectReasonSchema = z.object({
   reason: z.string().min(10, 'Please provide a reason (at least 10 characters)'),
 })

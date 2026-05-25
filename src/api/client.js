@@ -37,10 +37,13 @@ export const api = {
   orgStats:   (orgId)    => client.get('/admin/org-stats', { params: { org_id: orgId } }),
 
   // Users
-  listUsers:       (params) => client.get('/users', { params }),
-  createManaged:   (data)   => client.post('/users/managed', data),
-  setActiveStatus: (id, is_active) => client.patch(`/users/${id}/active`, { is_active }),
-  deleteUser:      (id)     => client.delete(`/users/${id}`),
+  listUsers:          (params)       => client.get('/users', { params }),
+  createManaged:      (data)         => client.post('/users/managed', data),
+  updateUser:         (id, data)     => client.patch(`/users/${id}`, data),
+  adminResetPassword: (id)           => client.post(`/users/${id}/reset-password`),
+  reassignOrg:        (id, org_id)   => client.patch(`/users/${id}/reassign-org`, { org_id }),
+  setActiveStatus:    (id, is_active) => client.patch(`/users/${id}/active`, { is_active }),
+  deleteUser:         (id)           => client.delete(`/users/${id}`),
 
   // Organizations
   listOrgs:  (params) => client.get('/organizations', { params }),
