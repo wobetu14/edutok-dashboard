@@ -1,7 +1,7 @@
 import { NavLink, Link, useMatch } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Building2, BookOpen,
-  BarChart2, ScrollText, Megaphone, Settings, LogOut,
+  BarChart2, ScrollText, Megaphone, Settings, LogOut, Tags,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { NAV_ITEMS } from '@/utils/constants'
@@ -9,7 +9,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 
-const ICONS = { LayoutDashboard, Users, Building2, BookOpen, BarChart2, ScrollText, Megaphone, Settings }
+const ICONS = { LayoutDashboard, Users, Building2, BookOpen, BarChart2, ScrollText, Megaphone, Settings, Tags }
 
 function initials(name = '') {
   return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()

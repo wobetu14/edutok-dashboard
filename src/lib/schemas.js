@@ -62,6 +62,22 @@ export const announcementSchema = z.object({
   expires_at:  z.string().optional(),
 })
 
+export const createCategorySchema = z.object({
+  id:    z.string()
+           .min(1, 'Slug is required')
+           .max(50, 'Slug must be at most 50 characters')
+           .regex(/^[a-z0-9_-]+$/, 'Slug must be lowercase, alphanumeric, hyphens or underscores'),
+  label: z.string().min(1, 'Label is required').max(50, 'Label must be at most 50 characters'),
+  icon:  z.string().min(1, 'Icon name is required').max(50, 'Icon name must be at most 50 characters'),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Must be a valid hex color (e.g. #FF6B35)'),
+})
+
+export const updateCategorySchema = z.object({
+  label: z.string().min(1, 'Label is required').max(50, 'Label must be at most 50 characters').optional(),
+  icon:  z.string().min(1, 'Icon name is required').max(50, 'Icon name must be at most 50 characters').optional(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Must be a valid hex color (e.g. #FF6B35)').optional(),
+})
+
 export const rejectReasonSchema = z.object({
   reason: z.string().min(10, 'Please provide a reason (at least 10 characters)'),
 })
