@@ -5,6 +5,7 @@ import LoginPage from './pages/auth/LoginPage';
 import DashboardPage from './pages/dashboard/DashboardPage';
 import UsersPage from './pages/users/UsersPage';
 import OrgsPage from './pages/organizations/OrgsPage';
+import OrgDetailPage from './pages/organizations/OrgDetailPage';
 import CoursesPage from './pages/courses/CoursesPage';
 import AnalyticsPage from './pages/analytics/AnalyticsPage';
 import AuditPage from './pages/audit/AuditPage';
@@ -56,6 +57,14 @@ export default function App() {
           element={
             <RequireAuth roles={['super_admin']}>
               <OrgsPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/organizations/:orgId"
+          element={
+            <RequireAuth roles={['super_admin']}>
+              <OrgDetailPage />
             </RequireAuth>
           }
         />

@@ -47,10 +47,13 @@ export const api = {
 
   // Organizations
   listOrgs:           (params)          => client.get('/organizations', { params }),
+  getOrg:             (id)              => client.get(`/organizations/${id}`),
   createOrg:          (data)            => client.post('/organizations', data),
   updateOrg:          (id, data)        => client.patch(`/organizations/${id}`, data),
   setOrgActiveStatus: (id, data)        => client.patch(`/organizations/${id}/active`, data),
   deleteOrg:          (id)              => client.delete(`/organizations/${id}`),
+  listOrgMembers:     (id)              => client.get(`/organizations/${id}/members`),
+  listOrgCourses:     (id, params)      => client.get(`/organizations/${id}/courses`, { params }),
   listApplications:   (params)          => client.get('/organizations/applications', { params }),
   reviewApplication:  (appId, data)     => client.patch(`/organizations/applications/${appId}/review`, data),
 

@@ -22,6 +22,7 @@ export function DataTable({
   total,
   limit,
   onPageChange,
+  onRowClick,
 }) {
   const totalPages = limit && total ? Math.ceil(total / limit) : 0
   const start = total === 0 ? 0 : (page - 1) * limit + 1
@@ -65,10 +66,11 @@ export function DataTable({
                 <TableRow
                   key={row.id ?? i}
                   className={cn(
-                    'hover:bg-muted/40 animate-fade-up',
-                    'transition-colors duration-150',
+                    'hover:bg-muted/40 animate-fade-up transition-colors duration-150',
+                    onRowClick && 'cursor-pointer',
                   )}
                   style={{ animationDelay: `${i * 30}ms` }}
+                  onClick={onRowClick ? () => onRowClick(row) : undefined}
                 >
                   {columns.map((col) => (
                     <TableCell key={col.key}>

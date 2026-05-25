@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import {
   Building2, Plus, Search, Trash2, CheckCircle, UserPlus,
   Pencil, PowerOff, ClipboardList, CheckCheck, XCircle,
@@ -56,6 +57,7 @@ function AppStatusBadge({ status }) {
 
 export default function OrgsPage() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const qc       = useQueryClient()
   const isSuperAdmin = user?.role === 'super_admin'
 
@@ -315,7 +317,7 @@ export default function OrgsPage() {
       key: 'actions',
       label: '',
       render: (row) => (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
           <Button
             variant="ghost" size="icon"
             className="text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -454,6 +456,7 @@ export default function OrgsPage() {
               total={data?.total ?? 0}
               limit={LIMIT}
               onPageChange={setPage}
+              onRowClick={(row) => navigate(`/organizations/${row.id}`)}
             />
           </Card>
         </TabsContent>
