@@ -65,6 +65,13 @@ export const announcementSchema = z.object({
   expires_at:  z.string().optional(),
 })
 
+export const updateOrgSchema = z.object({
+  name:        z.string().min(2, 'Name must be at least 2 characters').optional(),
+  description: z.string().optional(),
+  website:     optionalUrl,
+  logo_url:    optionalUrl,
+})
+
 export const createCategorySchema = z.object({
   id:    z.string()
            .min(1, 'Slug is required')

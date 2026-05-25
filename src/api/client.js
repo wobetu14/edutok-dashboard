@@ -46,9 +46,13 @@ export const api = {
   deleteUser:         (id)           => client.delete(`/users/${id}`),
 
   // Organizations
-  listOrgs:  (params) => client.get('/organizations', { params }),
-  createOrg: (data)   => client.post('/organizations', data),
-  deleteOrg: (id)     => client.delete(`/organizations/${id}`),
+  listOrgs:           (params)          => client.get('/organizations', { params }),
+  createOrg:          (data)            => client.post('/organizations', data),
+  updateOrg:          (id, data)        => client.patch(`/organizations/${id}`, data),
+  setOrgActiveStatus: (id, data)        => client.patch(`/organizations/${id}/active`, data),
+  deleteOrg:          (id)              => client.delete(`/organizations/${id}`),
+  listApplications:   (params)          => client.get('/organizations/applications', { params }),
+  reviewApplication:  (appId, data)     => client.patch(`/organizations/applications/${appId}/review`, data),
 
   // Courses
   listMyCourses:    (params) => client.get('/courses/mine', { params }),
