@@ -87,7 +87,7 @@ export function DataTable({
       {totalPages > 0 && (
         <div className="flex items-center justify-between px-4 py-3 border-t border-border flex-wrap gap-2">
           <p className="text-xs text-muted-foreground">
-            {total > 0 ? `${start}–${end} of ${total}` : '0 results'}
+            {total > 0 ? `${start}–${end} of ${totalPages}` : '0 results'}
           </p>
 
           {totalPages > 1 && (
