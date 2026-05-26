@@ -6,6 +6,7 @@ import DashboardPage from './pages/dashboard/DashboardPage';
 import UsersPage from './pages/users/UsersPage';
 import OrgsPage from './pages/organizations/OrgsPage';
 import OrgDetailPage from './pages/organizations/OrgDetailPage';
+import MyOrganizationPage from './pages/organizations/MyOrganizationPage';
 import CoursesPage from './pages/courses/CoursesPage';
 import AnalyticsPage from './pages/analytics/AnalyticsPage';
 import AuditPage from './pages/audit/AuditPage';
@@ -65,6 +66,15 @@ export default function App() {
           element={
             <RequireAuth roles={['super_admin']}>
               <OrgDetailPage />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/my-organization"
+          element={
+            <RequireAuth roles={['org_admin', 'instructor']}>
+              <MyOrganizationPage />
             </RequireAuth>
           }
         />
