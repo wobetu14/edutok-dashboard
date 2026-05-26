@@ -58,9 +58,9 @@ export const api = {
   reviewApplication:  (appId, data)     => client.patch(`/organizations/applications/${appId}/review`, data),
 
   // Courses
-  listMyCourses:    (params) => client.get('/courses/mine', { params }),
-  listPending:      (params) => client.get('/admin/courses/pending', { params }),
-  reviewCourse:     (id, data) => client.patch(`/admin/courses/${id}/review`, data),
+  listMyCourses:  (params)     => client.get('/courses/mine', { params }),
+  createCourse:   (data)       => client.post('/courses', data),
+  approveCourse:  (id, data)   => client.patch(`/courses/${id}/approve`, data),
 
   // Profile (current user)
   getMe:           ()       => client.get('/users/me'),

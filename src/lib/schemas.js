@@ -114,6 +114,16 @@ export const rejectReasonSchema = z.object({
   reason: z.string().min(10, 'Please provide a reason (at least 10 characters)'),
 })
 
+export const createCourseSchema = z.object({
+  title:         z.string().min(3, 'Title must be at least 3 characters').max(150),
+  description:   z.string().max(2000).optional(),
+  category_ids:  z.array(z.string()).min(1, 'Select at least one category'),
+  difficulty:    z.enum(['Beginner', 'Intermediate', 'Advanced']),
+  visibility:    z.enum(['public', 'unlisted', 'private']),
+  org_id:        z.string().min(1, 'Organization is required'),
+  instructor_id: z.string().optional(),
+})
+
 export const updateProfileSchema = z.object({
   full_name: z.string().min(2, 'Full name must be at least 2 characters'),
   bio:       z.string().max(200, 'Bio must be at most 200 characters').optional(),
