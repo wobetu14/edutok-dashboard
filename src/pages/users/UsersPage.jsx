@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Navigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { UserPlus, Search, PowerOff, Pencil, KeyRound, Building2 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
@@ -86,11 +87,15 @@ export default function UsersPage() {
   const { user: me } = useAuth()
   const qc = useQueryClient()
   const isSuperAdmin = me?.role === 'super_admin'
+  const isOrgAdmin   = me?.role === 'org_admin'
+
+  // Each role manages exactly one tier below them
+  const fixedRole      = isSuperAdmin ? 'org_admin' : 'instructor'
+  const fixedRoleLabel = isSuperAdmin ? 'Org Admins' : 'Instructors'
 
   // ── List state ──
-  const [page, setPage]       = useState(1)
-  const [search, setSearch]   = useState('')
-  const [roleFilter, setRole] = useState('')
+  const [page, setPage]     = useState(1)
+  const [search, setSearch] = useState('')
 
   // ── Create modal ──
   const [createOpen, setCreateOpen]   = useState(false)
@@ -122,9 +127,9 @@ export default function UsersPage() {
 
   // ── Queries ──
   const { data, isLoading } = useQuery({
-    queryKey: ['users', page, search, roleFilter],
+    queryKey: ['users', page, search, fixedRole],
     queryFn: () =>
-      api.listUsers({ page, limit: LIMIT, search: search || undefined, role: roleFilter || undefined })
+      api.listUsers({ page, limit: LIMIT, search: search || undefined, role: fixedRole })
         .then((r) => ({ users: r.data.data, total: r.data.meta?.total ?? 0 })),
     keepPreviousData: true,
   })
@@ -170,6 +175,9 @@ export default function UsersPage() {
     mutationFn: ({ id, is_active }) => api.setActiveStatus(id, is_active),
     onSuccess: () => qc.invalidateQueries(['users']),
   })
+
+  // Instructors have no access — guard placed after ALL hooks
+  if (me && !isSuperAdmin && !isOrgAdmin) return <Navigate to="/profile" replace />
 
   // ── Helpers ──
   const clearCreateField = (f) => setCreateErrors((p) => { const n = { ...p }; delete n[f]; return n })
@@ -343,36 +351,34 @@ export default function UsersPage() {
   return (
     <div className="flex flex-col gap-4">
 
-      {/* ── Toolbar ── */}
-      <div className="flex flex-col sm:flex-row gap-3 justify-between">
-        <div className="flex gap-2 flex-1">
-          <div className="relative flex-1 max-w-xs">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              className="pl-9"
-              placeholder="Search users…"
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-            />
-          </div>
-          {/* Role filter — super_admin only; org_admin always sees instructors */}
-          {isSuperAdmin && (
-            <select
-              className="w-36 h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
-              value={roleFilter}
-              onChange={(e) => { setRole(e.target.value); setPage(1) }}
-            >
-              <option value="">All roles</option>
-              {Object.entries(ROLES).map(([v, r]) => (
-                <option key={v} value={v}>{r.label}</option>
-              ))}
-            </select>
-          )}
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-semibold text-foreground">Users — {fixedRoleLabel}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {isSuperAdmin
+              ? 'Manage organization administrators.'
+              : 'Manage instructors in your organization.'}
+          </p>
         </div>
-        <Button onClick={() => setCreateOpen(true)}>
+        <Button onClick={() => {
+          setCreateForm({ ...INIT_CREATE, role: fixedRole })
+          setCreateOpen(true)
+        }}>
           <UserPlus size={15} />
           Add User
         </Button>
+      </div>
+
+      {/* ── Search toolbar ── */}
+      <div className="relative max-w-xs">
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          className="pl-9"
+          placeholder={`Search ${fixedRoleLabel.toLowerCase()}…`}
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+        />
       </div>
 
       {/* ── Table ── */}
@@ -453,42 +459,25 @@ export default function UsersPage() {
                 <FieldError message={createErrors.email} />
               </div>
 
-              {/* Role — super_admin can pick any staff role; org_admin can only create instructors */}
-              {isSuperAdmin && (
-                <div className="flex flex-col gap-1.5">
-                  <Label>Role <span className="text-destructive">*</span></Label>
-                  <select
-                    className="h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
-                    value={createForm.role}
-                    onChange={(e) => {
-                      setCreateForm({ ...createForm, role: e.target.value, org_id: '' })
-                      setCreateSelectedOrg(null)
-                      setCreateOrgSearch('')
-                      clearCreateField('role')
-                      clearCreateField('org_id')
-                    }}
-                  >
-                    <option value="instructor">Instructor</option>
-                    <option value="org_admin">Org Admin</option>
-                    <option value="super_admin">Super Admin</option>
-                  </select>
-                  <FieldError message={createErrors.role} />
+              {/* Role — fixed per caller; shown read-only */}
+              <div className="flex flex-col gap-1.5">
+                <Label>Role</Label>
+                <div className="h-10 px-3 flex items-center rounded-md border border-input bg-muted/50 text-sm text-muted-foreground font-medium">
+                  {ROLES[fixedRole]?.label ?? fixedRole}
                 </div>
-              )}
+              </div>
 
-              {/* Org picker — hidden for super_admin (they don't belong to an org) */}
-              {createForm.role !== 'super_admin' && (
-                <OrgCombobox
-                  orgSearch={createOrgSearch}
-                  setOrgSearch={setCreateOrgSearch}
-                  selectedOrg={createSelectedOrg}
-                  setSelectedOrg={setCreateSelectedOrg}
-                  onSelect={(id) => setCreateForm((f) => ({ ...f, org_id: id }))}
-                  error={createErrors.org_id}
-                  clearError={() => clearCreateField('org_id')}
-                  enabled={createOpen}
-                />
-              )}
+              {/* Org picker */}
+              <OrgCombobox
+                orgSearch={createOrgSearch}
+                setOrgSearch={setCreateOrgSearch}
+                selectedOrg={createSelectedOrg}
+                setSelectedOrg={setCreateSelectedOrg}
+                onSelect={(id) => setCreateForm((f) => ({ ...f, org_id: id }))}
+                error={createErrors.org_id}
+                clearError={() => clearCreateField('org_id')}
+                enabled={createOpen}
+              />
 
               {createApiErr && <p className="text-xs text-destructive">{createApiErr}</p>}
 

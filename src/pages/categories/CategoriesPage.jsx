@@ -161,14 +161,20 @@ export default function CategoriesPage() {
             <Link
               key={cat.id}
               to={`/categories/${cat.id}`}
-              className="group block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="group relative block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary group-hover:z-50"
+              style={{ zIndex: 'auto' }}
+              onMouseEnter={e => e.currentTarget.style.zIndex = 50}
+              onMouseLeave={e => e.currentTarget.style.zIndex = 'auto'}
             >
               <Card
-                className="animate-fade-up overflow-hidden transition-shadow group-hover:shadow-md cursor-pointer"
-                style={{ animationDelay: `${i * 50}ms` }}
+                className="animate-fade-up relative overflow-hidden transition-all duration-300 ease-out group-hover:scale-[1.5] group-hover:-translate-x-4 group-hover:translate-y-4 group-hover:shadow-[-8px_8px_19px_8px_rgba(0,0,0,0.06)] cursor-pointer"
+                style={{ animationDelay: `${i * 50}ms`, transformOrigin: 'top right' }}
               >
-                {/* Color accent strip */}
-                <div className="h-1.5 w-full transition-all group-hover:h-2" style={{ background: cat.color }} />
+                {/* Color accent strip — absolute so height growth never shifts card content */}
+                <div
+                  className="absolute top-0 left-0 right-0 h-1.5 z-10"
+                  style={{ background: cat.color }}
+                />
 
                 <CardContent className="p-4 flex flex-col gap-3">
                   {/* Icon + label row */}
