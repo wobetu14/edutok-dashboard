@@ -59,8 +59,25 @@ export const api = {
 
   // Courses
   listMyCourses:  (params)     => client.get('/courses/mine', { params }),
+  getCourse:      (id)         => client.get(`/courses/${id}`),
   createCourse:   (data)       => client.post('/courses', data),
+  updateCourse:   (id, data)   => client.patch(`/courses/${id}`, data),
+  deleteCourse:   (id)         => client.delete(`/courses/${id}`),
+  submitCourse:   (id)         => client.post(`/courses/${id}/submit`),
   approveCourse:  (id, data)   => client.patch(`/courses/${id}/approve`, data),
+  listStudents:   (id, params) => client.get(`/courses/${id}/students`, { params }),
+
+  // Lessons
+  createLesson:   (data)       => client.post('/lessons', data),
+  updateLesson:   (id, data)   => client.patch(`/lessons/${id}`, data),
+  deleteLesson:   (id)         => client.delete(`/lessons/${id}`),
+  reorderLessons: (data)       => client.patch('/lessons/reorder', data),
+
+  // Quizzes
+  getQuizByLesson: (lessonId)  => client.get(`/quizzes/lesson/${lessonId}`),
+  createQuiz:      (data)      => client.post('/quizzes', data),
+  updateQuiz:      (id, data)  => client.patch(`/quizzes/${id}`, data),
+  deleteQuiz:      (id)        => client.delete(`/quizzes/${id}`),
 
   // Profile (current user)
   getMe:           ()       => client.get('/users/me'),

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { CheckCircle, XCircle, Plus } from 'lucide-react'
 import { Card } from '@/components/ui/card'
@@ -39,8 +40,9 @@ const inputClass  = 'w-full px-3 py-2 rounded-md border border-input bg-backgrou
 const selectClass = 'w-full px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring'
 
 export default function CoursesPage() {
-  const { user } = useAuth()
-  const qc       = useQueryClient()
+  const { user }   = useAuth()
+  const navigate   = useNavigate()
+  const qc         = useQueryClient()
 
   const [page, setPage]                 = useState(1)
   const [tab, setTab]                   = useState('all')
@@ -289,6 +291,7 @@ export default function CoursesPage() {
           total={data?.total ?? 0}
           limit={LIMIT}
           onPageChange={setPage}
+          onRowClick={(row) => navigate(`/courses/${row.id}`)}
         />
       </Card>
 

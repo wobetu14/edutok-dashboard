@@ -8,6 +8,7 @@ import OrgsPage from './pages/organizations/OrgsPage';
 import OrgDetailPage from './pages/organizations/OrgDetailPage';
 import MyOrganizationPage from './pages/organizations/MyOrganizationPage';
 import CoursesPage from './pages/courses/CoursesPage';
+import CourseDetailPage from './pages/courses/CourseDetailPage';
 import AnalyticsPage from './pages/analytics/AnalyticsPage';
 import AuditPage from './pages/audit/AuditPage';
 import AnnouncementsPage from './pages/announcements/AnnouncementsPage';
@@ -80,6 +81,7 @@ export default function App() {
         />
 
         <Route path="/courses" element={<CoursesPage />} />
+        <Route path="/courses/:id" element={<CourseDetailPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/settings" element={<SettingsPage />} />
 
