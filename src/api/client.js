@@ -109,8 +109,9 @@ export const api = {
   listCourses: (params) => client.get('/courses', { params }),
 
   // Categories (super_admin CRUD; GET is public)
-  listCategories:   ()         => client.get('/categories'),
-  createCategory:   (data)     => client.post('/categories', data),
-  updateCategory:   (id, data) => client.patch(`/categories/${id}`, data),
-  deleteCategory:   (id)       => client.delete(`/categories/${id}`),
+  listCategories:        ()             => client.get('/categories'),
+  listCategoryCourses:   (id, params)   => client.get(`/categories/${id}/courses`, { params }),
+  createCategory:        (data)         => client.post('/categories', data),
+  updateCategory:        (id, data)     => client.patch(`/categories/${id}`, data),
+  deleteCategory:        (id)           => client.delete(`/categories/${id}`),
 };

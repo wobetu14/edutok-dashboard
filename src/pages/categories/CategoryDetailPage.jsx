@@ -24,7 +24,7 @@ export default function CategoryDetailPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['courses-by-category', categoryId, page],
     queryFn: () =>
-      api.listCourses({ category: categoryId, page, limit: LIMIT })
+      api.listCategoryCourses(categoryId, { page, limit: LIMIT })
         .then((r) => r.data),
     keepPreviousData: true,
   })
