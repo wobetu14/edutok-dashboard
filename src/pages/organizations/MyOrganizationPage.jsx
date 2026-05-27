@@ -260,7 +260,7 @@ export default function MyOrganizationPage() {
         <StatCard icon={Users}    label="Members" value={org.member_count ?? members.length} />
         <StatCard icon={BookOpen} label="Courses" value={org.course_count ?? '—'} />
         <StatCard icon={Calendar} label="Created" value={new Date(org.created_at).toLocaleDateString()} />
-        <StatCard icon={Crown}    label="Owner"   value={org.owner?.full_name ?? '—'} />
+        <StatCard icon={Crown}    label="Founder"  value={org.owner?.full_name ?? '—'} />
       </div>
 
       {/* ── About ───────────────────────────────────────────────────────── */}
@@ -313,7 +313,7 @@ export default function MyOrganizationPage() {
               <UserCheck size={16} className="text-muted-foreground" />
             </div>
             <div className="flex-1">
-              <p className="text-xs text-muted-foreground">Organization Owner</p>
+              <p className="text-xs text-muted-foreground">Organization Founder</p>
               <p className="text-sm font-semibold text-foreground">{org.owner.full_name}</p>
               <p className="text-xs text-muted-foreground">@{org.owner.username}</p>
             </div>

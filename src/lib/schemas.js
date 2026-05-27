@@ -38,17 +38,28 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 })
 
-export const createUserSchema = z.object({
+const userBaseSchema = {
   full_name: z.string().min(2, 'Full name must be at least 2 characters'),
   username:  usernameRule,
   phone:     phoneRule,
   email:     optionalEmail,
-  role:      z.enum(['instructor', 'org_admin', 'super_admin']),
-  org_id:    z.string().optional(),
+}
+
+// Super admin creates: Super Admin or Org Admin (org required for Org Admin)
+export const createUserBySuperAdminSchema = z.object({
+  ...userBaseSchema,
+  role:   z.enum(['org_admin', 'super_admin']),
+  org_id: z.string().optional(),
 }).refine(
   (d) => d.role === 'super_admin' || (d.org_id && d.org_id.length > 0),
   { message: 'Please select an organization', path: ['org_id'] },
 )
+
+// Org admin creates: Org Admin or Instructor (org auto-assigned server-side)
+export const createUserByOrgAdminSchema = z.object({
+  ...userBaseSchema,
+  role: z.enum(['org_admin', 'instructor']),
+})
 
 export const createOrgSchema = z.object({
   name:        z.string().min(2, 'Name must be at least 2 characters'),

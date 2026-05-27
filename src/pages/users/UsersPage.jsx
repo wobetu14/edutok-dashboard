@@ -17,7 +17,7 @@ import { Spinner } from '@/components/ui/Spinner'
 import { api } from '@/api/client'
 import { ROLES } from '@/utils/constants'
 import { useAuth } from '@/context/AuthContext'
-import { createUserSchema, updateUserSchema, reassignOrgSchema, fieldErrors } from '@/lib/schemas'
+import { createUserBySuperAdminSchema, createUserByOrgAdminSchema, updateUserSchema, reassignOrgSchema, fieldErrors } from '@/lib/schemas'
 
 const LIMIT = 10
 
@@ -89,9 +89,9 @@ export default function UsersPage() {
   const isSuperAdmin = me?.role === 'super_admin'
   const isOrgAdmin   = me?.role === 'org_admin'
 
-  // Each role manages exactly one tier below them
+  // Default role pre-selected when opening the create dialog
   const fixedRole      = isSuperAdmin ? 'org_admin' : 'instructor'
-  const fixedRoleLabel = isSuperAdmin ? 'Org Admins' : 'Instructors'
+  const fixedRoleLabel = isSuperAdmin ? 'Org Admins' : 'Your Team'
 
   // ── List state ──
   const [page, setPage]     = useState(1)
@@ -127,9 +127,9 @@ export default function UsersPage() {
 
   // ── Queries ──
   const { data, isLoading } = useQuery({
-    queryKey: ['users', page, search, fixedRole],
+    queryKey: ['users', page, search, isSuperAdmin ? fixedRole : undefined],
     queryFn: () =>
-      api.listUsers({ page, limit: LIMIT, search: search || undefined, role: fixedRole })
+      api.listUsers({ page, limit: LIMIT, search: search || undefined, role: isSuperAdmin ? fixedRole : undefined })
         .then((r) => ({ users: r.data.data, total: r.data.meta?.total ?? 0 })),
     keepPreviousData: true,
   })
@@ -216,7 +216,8 @@ export default function UsersPage() {
   const handleCreate = (e) => {
     e.preventDefault()
     setCreateApiErr('')
-    const result = createUserSchema.safeParse(createForm)
+    const schema = isSuperAdmin ? createUserBySuperAdminSchema : createUserByOrgAdminSchema
+    const result = schema.safeParse(createForm)
     if (!result.success) { setCreateErrors(fieldErrors(result)); return }
     setCreateErrors({})
     createUser.mutate(result.data)
@@ -358,11 +359,12 @@ export default function UsersPage() {
           <p className="text-sm text-muted-foreground mt-0.5">
             {isSuperAdmin
               ? 'Manage organization administrators.'
-              : 'Manage instructors in your organization.'}
+              : 'Manage org admins and instructors in your organization.'}
           </p>
         </div>
         <Button onClick={() => {
-          setCreateForm({ ...INIT_CREATE, role: fixedRole })
+          setCreateForm({ ...INIT_CREATE, role: isSuperAdmin ? 'org_admin' : fixedRole })
+          setCreateOrgSearch(''); setCreateSelectedOrg(null)
           setCreateOpen(true)
         }}>
           <UserPlus size={15} />
@@ -459,25 +461,48 @@ export default function UsersPage() {
                 <FieldError message={createErrors.email} />
               </div>
 
-              {/* Role — fixed per caller; shown read-only */}
+              {/* Role */}
               <div className="flex flex-col gap-1.5">
-                <Label>Role</Label>
-                <div className="h-10 px-3 flex items-center rounded-md border border-input bg-muted/50 text-sm text-muted-foreground font-medium">
-                  {ROLES[fixedRole]?.label ?? fixedRole}
-                </div>
+                <Label>Role <span className="text-destructive">*</span></Label>
+                <select
+                  className="h-10 px-3 rounded-md border border-input bg-background text-sm text-foreground"
+                  value={createForm.role}
+                  onChange={(e) => {
+                    const role = e.target.value
+                    setCreateForm((f) => ({ ...f, role, org_id: '' }))
+                    setCreateSelectedOrg(null)
+                    setCreateOrgSearch('')
+                    clearCreateField('role')
+                    clearCreateField('org_id')
+                  }}
+                >
+                  {isSuperAdmin ? (
+                    <>
+                      <option value="org_admin">Org Admin</option>
+                      <option value="super_admin">Super Admin</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="instructor">Instructor</option>
+                      <option value="org_admin">Org Admin</option>
+                    </>
+                  )}
+                </select>
               </div>
 
-              {/* Org picker */}
-              <OrgCombobox
-                orgSearch={createOrgSearch}
-                setOrgSearch={setCreateOrgSearch}
-                selectedOrg={createSelectedOrg}
-                setSelectedOrg={setCreateSelectedOrg}
-                onSelect={(id) => setCreateForm((f) => ({ ...f, org_id: id }))}
-                error={createErrors.org_id}
-                clearError={() => clearCreateField('org_id')}
-                enabled={createOpen}
-              />
+              {/* Org picker — only super_admin needs to pick an org; org_admin's org is auto-assigned */}
+              {isSuperAdmin && createForm.role !== 'super_admin' && (
+                <OrgCombobox
+                  orgSearch={createOrgSearch}
+                  setOrgSearch={setCreateOrgSearch}
+                  selectedOrg={createSelectedOrg}
+                  setSelectedOrg={setCreateSelectedOrg}
+                  onSelect={(id) => setCreateForm((f) => ({ ...f, org_id: id }))}
+                  error={createErrors.org_id}
+                  clearError={() => clearCreateField('org_id')}
+                  enabled={createOpen}
+                />
+              )}
 
               {createApiErr && <p className="text-xs text-destructive">{createApiErr}</p>}
 

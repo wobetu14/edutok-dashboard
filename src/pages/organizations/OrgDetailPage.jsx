@@ -374,7 +374,7 @@ export default function OrgDetailPage() {
         <StatCard icon={Calendar}  label="Created"  value={new Date(org.created_at).toLocaleDateString()} />
         <StatCard
           icon={Crown}
-          label="Owner"
+          label="Founder"
           value={org.owner?.full_name ?? '—'}
         />
       </div>
@@ -429,7 +429,7 @@ export default function OrgDetailPage() {
               <UserCheck size={16} className="text-muted-foreground" />
             </div>
             <div className="flex-1">
-              <p className="text-xs text-muted-foreground">Organization Owner</p>
+              <p className="text-xs text-muted-foreground">Organization Founder</p>
               <p className="text-sm font-semibold text-foreground">{org.owner.full_name}</p>
               <p className="text-xs text-muted-foreground">@{org.owner.username}</p>
             </div>
