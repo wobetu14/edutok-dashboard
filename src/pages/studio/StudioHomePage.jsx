@@ -114,7 +114,7 @@ export default function StudioHomePage() {
           </Button>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {courses.map((course) => (
             <CourseCard
               key={course.id}
@@ -140,6 +140,13 @@ export default function StudioHomePage() {
 
 function CourseCard({ course, onClick }) {
   const lessons = course.lesson_count ?? course.lessons?.length ?? 0
+
+  // Collect category labels from join table or legacy string field
+  const categories = course.course_categories?.length
+    ? course.course_categories.map((cc) => cc.category ?? cc)
+    : course.category
+      ? [{ label: course.category, color: null }]
+      : []
 
   return (
     <Card
@@ -171,6 +178,26 @@ function CourseCard({ course, onClick }) {
         <h3 className="font-semibold text-foreground text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors">
           {course.title}
         </h3>
+
+        {/* Categories */}
+        {categories.length > 0 && (
+          <div className="flex items-center gap-1 flex-wrap">
+            {categories.slice(0, 3).map((cat, i) => (
+              <span
+                key={i}
+                className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground"
+              >
+                {cat.color && (
+                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: cat.color }} />
+                )}
+                {cat.label}
+              </span>
+            ))}
+            {categories.length > 3 && (
+              <span className="text-[10px] text-muted-foreground">+{categories.length - 3}</span>
+            )}
+          </div>
+        )}
 
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
