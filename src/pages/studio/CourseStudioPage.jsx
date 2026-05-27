@@ -158,12 +158,16 @@ export default function CourseStudioPage() {
 
   const updateLessonMutation = useMutation({
     mutationFn: ({ lessonId, ...data }) => api.updateLesson(lessonId, data),
-    onSuccess:  invalidate,
+    onSuccess:  (_, { lessonId }) => {
+      invalidate()
+      qc.invalidateQueries(['lesson-content', lessonId])
+    },
   })
 
   const deleteLessonMutation = useMutation({
     mutationFn: (lessonId) => api.deleteLesson(lessonId),
-    onSuccess: () => {
+    onSuccess: (_, lessonId) => {
+      qc.removeQueries(['lesson-content', lessonId])
       invalidate()
       setDeleteId(null)
       setSelected(sortedLessons.find((l) => l.id !== deleteLessonId)?.id ?? 'settings')
@@ -712,9 +716,24 @@ function CourseSettingsPanel({ course, canManage, isPending, error, onSave }) {
 
 function LessonEditorPanel({ courseId, lesson, canManage, isSaving, saveError, onSave }) {
   const qc = useQueryClient()
-  const [form, setForm]       = useState(() => initLessonForm(lesson))
+  const [form, setForm]       = useState(null)   // null until full lesson data loads
   const [errors, setErrors]   = useState({})
   const [saved, setSaved]     = useState(false)
+
+  // Fetch the full lesson including content_json — getCourse omits it for brevity
+  const { data: fullLesson, isLoading: contentLoading } = useQuery({
+    queryKey: ['lesson-content', lesson.id],
+    queryFn:  () => api.getLesson(lesson.id).then((r) => r.data.data),
+    staleTime: 30_000,
+  })
+
+  // Initialise the form once the full lesson data arrives
+  useEffect(() => {
+    if (fullLesson) {
+      setForm(initLessonForm(fullLesson))
+      setErrors({})
+    }
+  }, [fullLesson?.id])
 
   // Quiz section state
   const [quizOpen, setQuizOpen]     = useState(false)
@@ -731,6 +750,7 @@ function LessonEditorPanel({ courseId, lesson, canManage, isSaving, saveError, o
 
   const invalidateLesson = () => {
     qc.invalidateQueries(['studio-course', courseId])
+    qc.invalidateQueries(['lesson-content', lesson.id])
     qc.invalidateQueries(['quiz', lesson.id])
   }
 
@@ -829,6 +849,15 @@ function LessonEditorPanel({ courseId, lesson, canManage, isSaving, saveError, o
     } else {
       setQuizMode('view')
     }
+  }
+
+  // Show spinner while content_json is loading (getCourse omits it)
+  if (contentLoading || !form) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Spinner />
+      </div>
+    )
   }
 
   return (

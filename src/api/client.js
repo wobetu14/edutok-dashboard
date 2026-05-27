@@ -68,6 +68,7 @@ export const api = {
   listStudents:   (id, params) => client.get(`/courses/${id}/students`, { params }),
 
   // Lessons
+  getLesson:      (id)         => client.get(`/lessons/${id}`),
   createLesson:   (data)       => client.post('/lessons', data),
   updateLesson:   (id, data)   => client.patch(`/lessons/${id}`, data),
   deleteLesson:   (id)         => client.delete(`/lessons/${id}`),
