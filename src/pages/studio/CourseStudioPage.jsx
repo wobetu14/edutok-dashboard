@@ -48,13 +48,18 @@ const initLessonForm = (lesson) => {
     duration_secs:    lesson?.duration_secs ?? 0,
     text_body:        '',
     image_items:      [{ uri: '', caption: '' }],
+    video_source:     'cloudinary',  // 'cloudinary' | 'youtube'
+    video_url:        '',
     video_youtube_id: '',
   }
   if (lesson?.content_json) {
     const c = lesson.content_json
     if (lesson.type === 'text')  base.text_body = c.body ?? ''
     if (lesson.type === 'image') base.image_items = Array.isArray(c) && c.length > 0 ? c : [{ uri: '', caption: '' }]
-    if (lesson.type === 'video') base.video_youtube_id = c.youtubeId ?? ''
+    if (lesson.type === 'video') {
+      if (c.youtubeId) { base.video_source = 'youtube'; base.video_youtube_id = c.youtubeId }
+      else if (c.url)  { base.video_source = 'cloudinary'; base.video_url = c.url }
+    }
   }
   return base
 }
@@ -63,8 +68,11 @@ const buildContentJson = (form) => {
   switch (form.type) {
     case 'text':  return { body: form.text_body }
     case 'image': return form.image_items.filter((i) => i.uri.trim())
-    case 'video': return { youtubeId: form.video_youtube_id.trim() }
-    default:      return {}
+    case 'video':
+      return form.video_source === 'youtube'
+        ? { youtubeId: form.video_youtube_id.trim() }
+        : { url: form.video_url.trim() }
+    default: return {}
   }
 }
 
@@ -196,7 +204,7 @@ export default function CourseStudioPage() {
   const selectedLesson = sortedLessons.find((l) => l.id === selected) ?? null
 
   return (
-    <div className="flex flex-col gap-0 -m-6 min-h-[calc(100vh-4rem)]">
+    <div className="flex flex-col -mx-6 -mb-6">
 
       {/* ── Studio Header ──────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 px-6 py-3 border-b border-border bg-card sticky top-0 z-20">
@@ -259,7 +267,7 @@ export default function CourseStudioPage() {
       </div>
 
       {/* ── Two-panel body ─────────────────────────────────────────────────────── */}
-      <div className="flex overflow-hidden" style={{ height: 'calc(100vh - 9.5rem)' }}>
+      <div className="flex overflow-hidden" style={{ height: 'calc(100vh - 3.5rem - 2.875rem)' }}>
 
         {/* ── Left: Course Outline ──────────────────────────────────────────────── */}
         <aside className={cn(
@@ -758,11 +766,16 @@ function LessonEditorPanel({ courseId, lesson, canManage, isSaving, saveError, o
     if (form.type === 'text' && !form.text_body.trim()) {
       setErrors({ text_body: 'Content is required' }); return
     }
-    if (form.type === 'video' && form.video_youtube_id.trim().length !== 11) {
-      setErrors({ video_youtube_id: 'YouTube ID must be exactly 11 characters' }); return
+    if (form.type === 'video') {
+      if (form.video_source === 'youtube' && form.video_youtube_id.trim().length !== 11) {
+        setErrors({ video_youtube_id: 'YouTube ID must be exactly 11 characters' }); return
+      }
+      if (form.video_source === 'cloudinary' && !form.video_url.trim()) {
+        setErrors({ video_url: 'Please upload a video first' }); return
+      }
     }
     if (form.type === 'image' && !form.image_items.some((i) => i.uri.trim())) {
-      setErrors({ image_items: 'At least one image URL is required' }); return
+      setErrors({ image_items: 'At least one image is required' }); return
     }
     onSave({
       title:         result.data.title,
@@ -904,93 +917,12 @@ function LessonEditorPanel({ courseId, lesson, canManage, isSaving, saveError, o
 
         {/* Content — video */}
         {form.type === 'video' && (
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium">YouTube Video ID <span className="text-destructive">*</span></label>
-              <input
-                className={inputClass}
-                value={form.video_youtube_id}
-                maxLength={11}
-                disabled={!canManage}
-                onChange={(e) => setField('video_youtube_id', e.target.value.trim())}
-                placeholder="11-character ID (e.g. dQw4w9WgXcQ)"
-              />
-              <p className="text-xs text-muted-foreground">
-                From: <code className="bg-muted px-1 rounded">youtube.com/watch?v=<strong>ID_HERE</strong></code>
-              </p>
-              <FieldError message={errors.video_youtube_id} />
-            </div>
-            {form.video_youtube_id.length === 11 && (
-              <div className="rounded-lg overflow-hidden border border-border aspect-video bg-black max-w-sm">
-                <img
-                  src={`https://img.youtube.com/vi/${form.video_youtube_id}/hqdefault.jpg`}
-                  alt="Thumbnail"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
-          </div>
+          <VideoEditor form={form} setField={setField} errors={errors} canManage={canManage} />
         )}
 
         {/* Content — image */}
         {form.type === 'image' && (
-          <div className="flex flex-col gap-3">
-            <label className="text-sm font-medium">Images <span className="text-destructive">*</span></label>
-            {form.image_items.map((item, i) => (
-              <div key={i} className="flex gap-2 items-start border border-border rounded-md p-3 bg-muted/20">
-                <div className="flex-1 flex flex-col gap-2">
-                  <input
-                    className={inputClass}
-                    value={item.uri}
-                    disabled={!canManage}
-                    onChange={(e) => {
-                      const items = [...form.image_items]
-                      items[i] = { ...items[i], uri: e.target.value }
-                      setField('image_items', items)
-                    }}
-                    placeholder="Image URL (https://…)"
-                  />
-                  <input
-                    className={inputClass}
-                    value={item.caption ?? ''}
-                    disabled={!canManage}
-                    onChange={(e) => {
-                      const items = [...form.image_items]
-                      items[i] = { ...items[i], caption: e.target.value }
-                      setField('image_items', items)
-                    }}
-                    placeholder="Caption (optional)"
-                  />
-                  {item.uri && (
-                    <img
-                      src={item.uri}
-                      alt={item.caption || `Image ${i + 1}`}
-                      className="max-h-24 rounded border border-border object-cover"
-                      onError={(e) => { e.target.style.display = 'none' }}
-                    />
-                  )}
-                </div>
-                {canManage && form.image_items.length > 1 && (
-                  <button
-                    type="button"
-                    className="mt-1 w-7 h-7 rounded hover:bg-destructive/10 text-destructive flex items-center justify-center shrink-0"
-                    onClick={() => setField('image_items', form.image_items.filter((_, j) => j !== i))}
-                  >
-                    <X size={14} />
-                  </button>
-                )}
-              </div>
-            ))}
-            {canManage && form.image_items.length < 20 && (
-              <Button
-                type="button" variant="outline" size="sm" className="self-start gap-1.5"
-                onClick={() => setField('image_items', [...form.image_items, { uri: '', caption: '' }])}
-              >
-                <Plus size={12} /> Add Image
-              </Button>
-            )}
-            <FieldError message={errors.image_items} />
-          </div>
+          <ImageEditor form={form} setField={setField} errors={errors} canManage={canManage} />
         )}
 
         {/* ── Quiz Section ────────────────────────────────────────────────────── */}
@@ -1221,6 +1153,262 @@ function LessonEditorPanel({ courseId, lesson, canManage, isSaving, saveError, o
   )
 }
 
+// ── Image editor (Cloudinary upload per image slot) ───────────────────────────
+
+function ImageEditor({ form, setField, errors, canManage }) {
+  const [uploading, setUploading] = useState({})  // { index: true/false }
+  const [uploadErrors, setUploadErrors] = useState({})
+  const fileRefs = useRef({})
+
+  const uploadImage = async (i, file) => {
+    if (!file) return
+    setUploading((prev) => ({ ...prev, [i]: true }))
+    setUploadErrors((prev) => ({ ...prev, [i]: '' }))
+    try {
+      const res = await api.uploadLessonImage(file)
+      const url = res.data.data.url
+      const items = [...form.image_items]
+      items[i] = { ...items[i], uri: url }
+      setField('image_items', items)
+    } catch (err) {
+      setUploadErrors((prev) => ({ ...prev, [i]: err.response?.data?.message ?? 'Upload failed' }))
+    } finally {
+      setUploading((prev) => ({ ...prev, [i]: false }))
+      if (fileRefs.current[i]) fileRefs.current[i].value = ''
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <label className="text-sm font-medium">Images <span className="text-destructive">*</span></label>
+      {form.image_items.map((item, i) => (
+        <div key={i} className="border border-border rounded-lg p-3 bg-muted/20 flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-muted-foreground">Image {i + 1}</span>
+            {canManage && form.image_items.length > 1 && (
+              <button
+                type="button"
+                className="text-xs text-destructive hover:underline"
+                onClick={() => setField('image_items', form.image_items.filter((_, j) => j !== i))}
+              >
+                Remove
+              </button>
+            )}
+          </div>
+
+          {/* Upload area */}
+          <div className="flex gap-3 items-start">
+            {/* Preview */}
+            <div className="w-20 h-20 rounded-md border border-border bg-background flex items-center justify-center overflow-hidden shrink-0">
+              {item.uri ? (
+                <img src={item.uri} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <ImageIcon size={20} className="text-muted-foreground/40" />
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2 flex-1 min-w-0">
+              <input
+                ref={(el) => { fileRefs.current[i] = el }}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                onChange={(e) => uploadImage(i, e.target.files?.[0])}
+              />
+              <Button
+                type="button" variant="outline" size="sm" className="gap-2 self-start"
+                disabled={!canManage || uploading[i]}
+                onClick={() => fileRefs.current[i]?.click()}
+              >
+                {uploading[i] ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+                {uploading[i] ? 'Uploading…' : item.uri ? 'Replace' : 'Upload Image'}
+              </Button>
+              <p className="text-xs text-muted-foreground">JPEG, PNG, WebP or GIF · Max 10 MB</p>
+              {uploadErrors[i] && <p className="text-xs text-destructive">{uploadErrors[i]}</p>}
+            </div>
+          </div>
+
+          {/* Caption */}
+          <input
+            className={inputClass}
+            value={item.caption ?? ''}
+            disabled={!canManage}
+            onChange={(e) => {
+              const items = [...form.image_items]
+              items[i] = { ...items[i], caption: e.target.value }
+              setField('image_items', items)
+            }}
+            placeholder="Caption (optional)"
+          />
+        </div>
+      ))}
+
+      {canManage && form.image_items.length < 20 && (
+        <Button
+          type="button" variant="outline" size="sm" className="self-start gap-1.5"
+          onClick={() => setField('image_items', [...form.image_items, { uri: '', caption: '' }])}
+        >
+          <Plus size={12} /> Add Another Image
+        </Button>
+      )}
+      <FieldError message={errors.image_items} />
+    </div>
+  )
+}
+
+// ── Video editor (Cloudinary upload OR YouTube embed) ─────────────────────────
+
+function VideoEditor({ form, setField, errors, canManage }) {
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
+  const [uploadProgress, setUploadProgress] = useState(null)
+  const fileRef = useRef(null)
+
+  const uploadVideo = async (file) => {
+    if (!file) return
+    setUploadError('')
+    setUploading(true)
+    setUploadProgress(0)
+    try {
+      const res = await api.uploadLessonVideo(file)
+      setField('video_url', res.data.data.url)
+    } catch (err) {
+      setUploadError(err.response?.data?.message ?? 'Upload failed')
+    } finally {
+      setUploading(false)
+      setUploadProgress(null)
+      if (fileRef.current) fileRef.current.value = ''
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Source toggle */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-medium">Video Source</label>
+        <div className="flex gap-2">
+          {[
+            { value: 'cloudinary', label: 'Upload File' },
+            { value: 'youtube',   label: 'YouTube ID' },
+          ].map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              disabled={!canManage}
+              onClick={() => { setField('video_source', opt.value); setUploadError('') }}
+              className={cn(
+                'px-4 py-1.5 rounded-md text-sm font-medium border transition-colors',
+                form.video_source === opt.value
+                  ? 'bg-primary text-white border-primary'
+                  : 'border-input text-muted-foreground hover:border-foreground',
+              )}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Cloudinary upload */}
+      {form.video_source === 'cloudinary' && (
+        <div className="flex flex-col gap-3">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="video/mp4,video/quicktime,video/webm,video/x-msvideo"
+            className="hidden"
+            onChange={(e) => uploadVideo(e.target.files?.[0])}
+          />
+
+          {form.video_url ? (
+            <div className="flex flex-col gap-2">
+              <video
+                src={form.video_url}
+                controls
+                className="w-full max-w-sm rounded-lg border border-border bg-black"
+                style={{ maxHeight: '200px' }}
+              />
+              {canManage && (
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" size="sm" className="gap-2"
+                    disabled={uploading} onClick={() => fileRef.current?.click()}>
+                    {uploading ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+                    Replace Video
+                  </Button>
+                  <Button type="button" variant="outline" size="sm"
+                    className="text-destructive hover:bg-destructive/10 border-destructive/30"
+                    onClick={() => setField('video_url', '')}>
+                    Remove
+                  </Button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div
+              className={cn(
+                'border-2 border-dashed border-border rounded-lg p-8 flex flex-col items-center gap-3 transition-colors',
+                canManage && 'cursor-pointer hover:border-primary/50 hover:bg-muted/30',
+              )}
+              onClick={() => canManage && fileRef.current?.click()}
+            >
+              {uploading ? (
+                <>
+                  <Loader2 size={28} className="text-primary animate-spin" />
+                  <p className="text-sm text-muted-foreground">Uploading to Cloudinary…</p>
+                  <p className="text-xs text-muted-foreground">This may take a moment for large files</p>
+                </>
+              ) : (
+                <>
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Video size={22} className="text-primary" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-foreground">Click to upload video</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">MP4, MOV, WebM or AVI · Max 500 MB</p>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {uploadError && <p className="text-xs text-destructive">{uploadError}</p>}
+          <FieldError message={errors.video_url} />
+        </div>
+      )}
+
+      {/* YouTube embed */}
+      {form.video_source === 'youtube' && (
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium">YouTube Video ID <span className="text-destructive">*</span></label>
+            <input
+              className={inputClass}
+              value={form.video_youtube_id}
+              maxLength={11}
+              disabled={!canManage}
+              onChange={(e) => setField('video_youtube_id', e.target.value.trim())}
+              placeholder="11-character ID (e.g. dQw4w9WgXcQ)"
+            />
+            <p className="text-xs text-muted-foreground">
+              From: <code className="bg-muted px-1 rounded">youtube.com/watch?v=<strong>ID_HERE</strong></code>
+            </p>
+            <FieldError message={errors.video_youtube_id} />
+          </div>
+          {form.video_youtube_id.length === 11 && (
+            <div className="rounded-lg overflow-hidden border border-border bg-black max-w-xs aspect-video">
+              <img
+                src={`https://img.youtube.com/vi/${form.video_youtube_id}/hqdefault.jpg`}
+                alt="YouTube thumbnail"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Quiz question row component ────────────────────────────────────────────────
 
 function QuizQuestionRow({ q, qi, type, canRemove, onUpdate, onRemove, onUpdateOption, onAddOption, onRemoveOption, onUpdatePair, onAddPair, onRemovePair }) {
@@ -1352,7 +1540,7 @@ function QuizQuestionRow({ q, qi, type, canRemove, onUpdate, onRemove, onUpdateO
 // ── Add Lesson Dialog ──────────────────────────────────────────────────────────
 
 function AddLessonDialog({ courseId, isPending, error, onClose, onSave }) {
-  const [form, setForm]   = useState({ title: '', type: 'text', duration_secs: 0, text_body: '', image_items: [{ uri: '', caption: '' }], video_youtube_id: '' })
+  const [form, setForm]   = useState({ title: '', type: 'text', duration_secs: 0, text_body: '', image_items: [{ uri: '', caption: '' }], video_source: 'cloudinary', video_url: '', video_youtube_id: '' })
   const [errors, setErrors] = useState({})
 
   const setField = (field, value) => {
@@ -1372,11 +1560,16 @@ function AddLessonDialog({ courseId, isPending, error, onClose, onSave }) {
     if (form.type === 'text' && !form.text_body.trim()) {
       setErrors({ text_body: 'Content is required' }); return
     }
-    if (form.type === 'video' && form.video_youtube_id.trim().length !== 11) {
-      setErrors({ video_youtube_id: 'YouTube ID must be exactly 11 characters' }); return
+    if (form.type === 'video') {
+      if (form.video_source === 'youtube' && form.video_youtube_id.trim().length !== 11) {
+        setErrors({ video_youtube_id: 'YouTube ID must be exactly 11 characters' }); return
+      }
+      if (form.video_source === 'cloudinary' && !form.video_url.trim()) {
+        setErrors({ video_url: 'Please upload a video first' }); return
+      }
     }
     if (form.type === 'image' && !form.image_items.some((i) => i.uri.trim())) {
-      setErrors({ image_items: 'At least one image URL is required' }); return
+      setErrors({ image_items: 'At least one image is required' }); return
     }
     onSave({
       type:          form.type,
@@ -1425,42 +1618,11 @@ function AddLessonDialog({ courseId, isPending, error, onClose, onSave }) {
             )}
 
             {form.type === 'video' && (
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium">YouTube ID <span className="text-destructive">*</span></label>
-                <input className={inputClass} value={form.video_youtube_id} maxLength={11}
-                  onChange={(e) => setField('video_youtube_id', e.target.value.trim())} placeholder="11-character ID" />
-                <p className="text-xs text-muted-foreground">From: youtube.com/watch?v=<strong>ID_HERE</strong></p>
-                <FieldError message={errors.video_youtube_id} />
-              </div>
+              <VideoEditor form={form} setField={setField} errors={errors} canManage />
             )}
 
             {form.type === 'image' && (
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">Images <span className="text-destructive">*</span></label>
-                {form.image_items.map((item, i) => (
-                  <div key={i} className="flex gap-2">
-                    <div className="flex-1 flex flex-col gap-1">
-                      <input className={inputClass} value={item.uri}
-                        onChange={(e) => { const items = [...form.image_items]; items[i] = { ...items[i], uri: e.target.value }; setField('image_items', items) }}
-                        placeholder="Image URL (https://…)" />
-                      <input className={inputClass} value={item.caption ?? ''}
-                        onChange={(e) => { const items = [...form.image_items]; items[i] = { ...items[i], caption: e.target.value }; setField('image_items', items) }}
-                        placeholder="Caption (optional)" />
-                    </div>
-                    {form.image_items.length > 1 && (
-                      <button type="button" className="mt-1 w-7 h-7 rounded hover:bg-destructive/10 text-destructive flex items-center justify-center shrink-0"
-                        onClick={() => setField('image_items', form.image_items.filter((_, j) => j !== i))}><X size={14} /></button>
-                    )}
-                  </div>
-                ))}
-                {form.image_items.length < 20 && (
-                  <Button type="button" variant="outline" size="sm" className="self-start gap-1"
-                    onClick={() => setField('image_items', [...form.image_items, { uri: '', caption: '' }])}>
-                    <Plus size={12} /> Add Image
-                  </Button>
-                )}
-                <FieldError message={errors.image_items} />
-              </div>
+              <ImageEditor form={form} setField={setField} errors={errors} canManage />
             )}
 
             {error && <p className="text-xs text-destructive">{error}</p>}

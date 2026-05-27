@@ -122,4 +122,20 @@ export const api = {
     fd.append('resource_type', 'course_thumbnail')
     return client.post('/media/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
   },
+
+  // Lesson image upload (single file → Cloudinary)
+  uploadLessonImage: (file) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('resource_type', 'lesson_image')
+    return client.post('/media/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
+
+  // Lesson video upload (single file → Cloudinary)
+  uploadLessonVideo: (file) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('resource_type', 'lesson_video')
+    return client.post('/media/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
 };
