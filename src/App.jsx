@@ -9,6 +9,8 @@ import OrgDetailPage from './pages/organizations/OrgDetailPage';
 import MyOrganizationPage from './pages/organizations/MyOrganizationPage';
 import CoursesPage from './pages/courses/CoursesPage';
 import CourseDetailPage from './pages/courses/CourseDetailPage';
+import StudioHomePage from './pages/studio/StudioHomePage';
+import CourseStudioPage from './pages/studio/CourseStudioPage';
 import AnalyticsPage from './pages/analytics/AnalyticsPage';
 import AuditPage from './pages/audit/AuditPage';
 import AnnouncementsPage from './pages/announcements/AnnouncementsPage';
@@ -82,6 +84,23 @@ export default function App() {
 
         <Route path="/courses" element={<CoursesPage />} />
         <Route path="/courses/:id" element={<CourseDetailPage />} />
+
+        <Route
+          path="/studio"
+          element={
+            <RequireAuth roles={['org_admin', 'instructor']}>
+              <StudioHomePage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/studio/course/:courseId"
+          element={
+            <RequireAuth roles={['org_admin', 'instructor']}>
+              <CourseStudioPage />
+            </RequireAuth>
+          }
+        />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/settings" element={<SettingsPage />} />
 

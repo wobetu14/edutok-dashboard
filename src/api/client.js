@@ -114,4 +114,12 @@ export const api = {
   createCategory:        (data)         => client.post('/categories', data),
   updateCategory:        (id, data)     => client.patch(`/categories/${id}`, data),
   deleteCategory:        (id)           => client.delete(`/categories/${id}`),
+
+  // Course thumbnail upload
+  uploadCourseThumbnail: (file) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('resource_type', 'course_thumbnail')
+    return client.post('/media/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
 };

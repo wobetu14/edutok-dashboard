@@ -24,14 +24,15 @@ export const DIFFICULTY = {
 };
 
 export const NAV_ITEMS = [
-  { path: '/dashboard',      label: 'Dashboard',      icon: 'LayoutDashboard', roles: null },
-  { path: '/users',          label: 'Users',          icon: 'Users',           roles: ['super_admin', 'org_admin'] },
-  { path: '/organizations',    label: 'Organizations',    icon: 'Building2', roles: ['super_admin'] },
-  { path: '/my-organization', label: 'My Organization', icon: 'Building2', roles: ['org_admin', 'instructor'] },
-  { path: '/courses',        label: 'Courses',        icon: 'BookOpen',        roles: null },
-  { path: '/categories',     label: 'Categories',     icon: 'Tags',            roles: ['super_admin'] },
-  { path: '/analytics',      label: 'Analytics',      icon: 'BarChart2',       roles: ['super_admin', 'org_admin'] },
-  { path: '/audit',          label: 'Audit Logs',     icon: 'ScrollText',      roles: ['super_admin'] },
-  { path: '/announcements',  label: 'Announcements',  icon: 'Megaphone',       roles: ['super_admin'] },
-  { path: '/settings',       label: 'Settings',       icon: 'Settings',        roles: null },
+  { path: '/dashboard',       label: 'Dashboard',      icon: 'LayoutDashboard', roles: null },
+  { path: '/studio',          label: 'Studio',         icon: 'Clapperboard',    roles: ['org_admin', 'instructor'] },
+  { path: '/users',           label: 'Users',          icon: 'Users',           roles: ['super_admin', 'org_admin'] },
+  { path: '/organizations',   label: 'Organizations',  icon: 'Building2',       roles: ['super_admin'] },
+  { path: '/my-organization', label: 'My Organization',icon: 'Building2',       roles: ['org_admin', 'instructor'] },
+  { path: '/courses',         label: 'Courses',        icon: 'BookOpen',        roles: null },
+  { path: '/categories',      label: 'Categories',     icon: 'Tags',            roles: ['super_admin'] },
+  { path: '/analytics',       label: 'Analytics',      icon: 'BarChart2',       roles: ['super_admin', 'org_admin'] },
+  { path: '/audit',           label: 'Audit Logs',     icon: 'ScrollText',      roles: ['super_admin'] },
+  { path: '/announcements',   label: 'Announcements',  icon: 'Megaphone',       roles: ['super_admin'] },
+  { path: '/settings',        label: 'Settings',       icon: 'Settings',        roles: null },
 ];
