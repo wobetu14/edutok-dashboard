@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft, Plus, ChevronUp, ChevronDown, Pencil, Trash2,
-  FileText, ImageIcon, Video, CheckCircle, XCircle, BookOpen, Users,
+  FileText, ImageIcon, Video, CheckCircle, XCircle, BookOpen, Users, Eye,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -111,6 +111,7 @@ export default function CourseDetailPage() {
 
   // Dialog states
   const [editCourseOpen, setEditCourseOpen] = useState(false)
+  const [viewLesson, setViewLesson]         = useState(null)  // lesson object
   const [lessonDialog, setLessonDialog]     = useState(null)  // { mode, lesson? }
   const [quizDialog, setQuizDialog]         = useState(null)  // { lesson }
   const [deleteLessonTarget, setDeleteLessonTarget] = useState(null)
@@ -460,6 +461,15 @@ export default function CourseDetailPage() {
                       </button>
                     ) : null}
 
+                    {/* View button — visible to all roles */}
+                    <Button
+                      variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground shrink-0"
+                      title="View lesson"
+                      onClick={() => setViewLesson(lesson)}
+                    >
+                      <Eye size={13} />
+                    </Button>
+
                     {/* Management actions */}
                     {canEdit && (
                       <div className="flex gap-1 shrink-0">
@@ -542,6 +552,14 @@ export default function CourseDetailPage() {
             onPageChange={setStudentsPage}
           />
         </Card>
+      )}
+
+      {/* ── Lesson View Dialog ────────────────────────────────────────────────── */}
+      {viewLesson && (
+        <LessonViewDialog
+          lesson={viewLesson}
+          onClose={() => setViewLesson(null)}
+        />
       )}
 
       {/* ── Edit Course Dialog ─────────────────────────────────────────────────── */}
@@ -672,6 +690,157 @@ export default function CourseDetailPage() {
         </DialogContent>
       </Dialog>
     </div>
+  )
+}
+
+// ── Lesson View Dialog ────────────────────────────────────────────────────────
+
+function LessonViewDialog({ lesson, onClose }) {
+  const { data: full, isLoading } = useQuery({
+    queryKey: ['lesson-content', lesson.id],
+    queryFn:  () => api.getLesson(lesson.id).then((r) => r.data.data),
+    staleTime: 30_000,
+  })
+
+  const { data: quiz, isLoading: quizLoading } = useQuery({
+    queryKey: ['quiz', lesson.id],
+    queryFn:  () => api.getQuizByLesson(lesson.id).then((r) => r.data.data),
+    enabled:  !!lesson.has_quiz,
+    staleTime: 30_000,
+  })
+
+  const content = full?.content_json
+
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o) onClose() }}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-center gap-2">
+            <span className="shrink-0">{LESSON_TYPE_ICON[lesson.type]}</span>
+            <DialogTitle className="truncate">{lesson.title}</DialogTitle>
+          </div>
+          <div className="flex items-center gap-2 pt-1">
+            <span className="text-xs text-muted-foreground capitalize bg-muted px-2 py-0.5 rounded-md">
+              {LESSON_TYPE_LABEL[lesson.type]}
+            </span>
+            {lesson.duration_secs > 0 && (
+              <span className="text-xs text-muted-foreground">{formatDuration(lesson.duration_secs)}</span>
+            )}
+          </div>
+        </DialogHeader>
+
+        {isLoading ? (
+          <div className="flex justify-center py-10"><Spinner /></div>
+        ) : (
+          <div className="flex flex-col gap-5 py-2">
+
+            {/* Text content */}
+            {lesson.type === 'text' && (
+              <div className="text-sm text-foreground whitespace-pre-wrap leading-relaxed border border-border rounded-lg p-4 bg-muted/20">
+                {content?.body || <span className="text-muted-foreground italic">No content.</span>}
+              </div>
+            )}
+
+            {/* Image content */}
+            {lesson.type === 'image' && Array.isArray(content) && content.length > 0 && (
+              <div className="flex flex-col gap-4">
+                {content.map((item, i) => (
+                  <div key={i} className="flex flex-col gap-1.5">
+                    <img
+                      src={item.uri}
+                      alt={item.caption || `Image ${i + 1}`}
+                      className="w-full rounded-lg border border-border object-cover max-h-64"
+                    />
+                    {item.caption && (
+                      <p className="text-xs text-muted-foreground text-center italic">{item.caption}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Video content */}
+            {lesson.type === 'video' && content && (
+              <div className="flex flex-col gap-2">
+                {content.youtubeId ? (
+                  <div className="aspect-video rounded-lg overflow-hidden border border-border bg-black">
+                    <iframe
+                      src={`https://www.youtube.com/embed/${content.youtubeId}`}
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      title={lesson.title}
+                    />
+                  </div>
+                ) : content.url ? (
+                  <video
+                    src={content.url}
+                    controls
+                    className="w-full rounded-lg border border-border max-h-64"
+                  />
+                ) : null}
+              </div>
+            )}
+
+            {/* Quiz summary */}
+            {lesson.has_quiz && (
+              <div className="flex flex-col gap-2 border-t border-border pt-4">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Quiz</p>
+                {quizLoading ? (
+                  <Spinner />
+                ) : quiz ? (
+                  <div className="flex flex-col gap-2">
+                    <Badge color="bg-primary/10 text-primary" className="self-start">
+                      {quiz.type === 'truefalse' ? 'True / False'
+                        : quiz.type === 'multipleChoice' ? 'Multiple Choice'
+                        : 'Image Matching'}
+                      {' · '}{quiz.questions_json?.length} question{quiz.questions_json?.length !== 1 ? 's' : ''}
+                    </Badge>
+                    <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto">
+                      {(quiz.questions_json ?? []).map((q, i) => (
+                        <div key={i} className="text-xs border border-border rounded p-2 bg-muted/20">
+                          {quiz.type !== 'imageMatching' && (
+                            <p className="font-medium">{i + 1}. {q.question}</p>
+                          )}
+                          {quiz.type === 'truefalse' && (
+                            <p className="text-muted-foreground mt-0.5">Answer: <span className="font-medium">{q.answer ? 'True' : 'False'}</span></p>
+                          )}
+                          {quiz.type === 'multipleChoice' && (
+                            <div className="mt-1 flex flex-col gap-0.5">
+                              {(q.options ?? []).map((opt, j) => (
+                                <span key={j} className={cn('px-1.5', opt === q.answer ? 'text-green-700 font-semibold' : 'text-muted-foreground')}>
+                                  {opt === q.answer ? '✓ ' : '· '}{opt}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          {quiz.type === 'imageMatching' && (
+                            <div className="flex flex-col gap-0.5">
+                              {(q.pairs ?? []).map((p, j) => (
+                                <span key={j} className="flex gap-2 text-muted-foreground">
+                                  <span className="truncate max-w-[140px]">{p.image}</span>
+                                  <span>→</span>
+                                  <span className="font-medium text-foreground">{p.label}</span>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            )}
+
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
