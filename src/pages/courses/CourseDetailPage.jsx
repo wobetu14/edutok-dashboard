@@ -800,14 +800,16 @@ function LessonContentPanel({ lesson, canEdit, onEdit, onDelete, onQuiz }) {
 
             {/* Images */}
             {lesson.type === 'image' && Array.isArray(content) && content.length > 0 && (
-              <div className="flex flex-col gap-5">
+              <div className="flex flex-col gap-5 max-w-2xl mx-auto w-full">
                 {content.map((item, i) => (
                   <div key={i} className="flex flex-col gap-2">
-                    <img
-                      src={item.uri}
-                      alt={item.caption || `Image ${i + 1}`}
-                      className="w-full rounded-lg border border-border object-cover max-h-80"
-                    />
+                    <div className="rounded-lg border border-border bg-muted/30 overflow-hidden flex items-center justify-center" style={{ maxHeight: 320 }}>
+                      <img
+                        src={item.uri}
+                        alt={item.caption || `Image ${i + 1}`}
+                        className="max-w-full max-h-80 object-contain"
+                      />
+                    </div>
                     {item.caption && (
                       <p className="text-xs text-muted-foreground text-center italic">{item.caption}</p>
                     )}
@@ -818,7 +820,7 @@ function LessonContentPanel({ lesson, canEdit, onEdit, onDelete, onQuiz }) {
 
             {/* Video */}
             {lesson.type === 'video' && content && (
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3 max-w-2xl mx-auto w-full">
                 {content.youtubeId ? (
                   <div className="aspect-video rounded-lg overflow-hidden border border-border bg-black">
                     <iframe
