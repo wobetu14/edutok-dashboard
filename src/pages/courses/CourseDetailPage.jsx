@@ -159,12 +159,12 @@ export default function CourseDetailPage() {
     keepPreviousData: true,
   })
 
-  // Who can manage this course
-  const canManage = !isSuperAdmin && !!course && (
-    (isOrgAdmin && me?.org_memberships?.some((m) => m.org.id === course.org_id)) ||
-    course.instructor_id === user?.id
-  )
-  const canApprove = canManage && isOrgAdmin && course?.status === 'pending'
+  // Only the course's own instructor can edit / add / delete lessons
+  const canEdit = !isSuperAdmin && !!course && course.instructor_id === user?.id
+  // Org admin of the course's org can approve/reject pending courses (cannot edit)
+  const canApprove = isOrgAdmin && !!course &&
+    me?.org_memberships?.some((m) => m.org.id === course.org_id) &&
+    course?.status === 'pending'
 
   const sortedLessons = [...(course?.lessons ?? [])].sort((a, b) => a.order_index - b.order_index)
 
@@ -296,19 +296,23 @@ export default function CourseDetailPage() {
             </div>
 
             {/* Action buttons */}
-            {canManage && (
+            {(canEdit || canApprove) && (
               <div className="flex gap-2 flex-wrap shrink-0">
-                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setEditCourseOpen(true)}>
-                  <Pencil size={13} /> Edit
-                </Button>
-                {course.status === 'rejected' && (
-                  <Button
-                    size="sm" variant="outline"
-                    disabled={submitMutation.isPending}
-                    onClick={() => submitMutation.mutate()}
-                  >
-                    {submitMutation.isPending ? <Spinner size="sm" /> : 'Re-submit for Review'}
-                  </Button>
+                {canEdit && (
+                  <>
+                    <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setEditCourseOpen(true)}>
+                      <Pencil size={13} /> Edit
+                    </Button>
+                    {course.status === 'rejected' && (
+                      <Button
+                        size="sm" variant="outline"
+                        disabled={submitMutation.isPending}
+                        onClick={() => submitMutation.mutate()}
+                      >
+                        {submitMutation.isPending ? <Spinner size="sm" /> : 'Re-submit for Review'}
+                      </Button>
+                    )}
+                  </>
                 )}
                 {canApprove && (
                   <>
@@ -403,7 +407,7 @@ export default function CourseDetailPage() {
       {/* ── Lessons tab ───────────────────────────────────────────────────────── */}
       {tab === 'lessons' && (
         <div className="flex flex-col gap-3">
-          {canManage && (
+          {canEdit && (
             <div className="flex justify-end">
               <Button className="gap-2" onClick={() => setLessonDialog({ mode: 'add' })}>
                 <Plus size={14} /> Add Lesson
@@ -413,7 +417,7 @@ export default function CourseDetailPage() {
 
           {sortedLessons.length === 0 ? (
             <Card className="p-10 text-center text-muted-foreground text-sm">
-              No lessons yet.{canManage ? ' Click "Add Lesson" to get started.' : ''}
+              No lessons yet.{canEdit ? ' Click "Add Lesson" to get started.' : ''}
             </Card>
           ) : (
             <Card>
@@ -447,7 +451,7 @@ export default function CourseDetailPage() {
                       >
                         Quiz
                       </button>
-                    ) : canManage ? (
+                    ) : canEdit ? (
                       <button
                         className="text-xs px-2 py-0.5 rounded-full border border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors shrink-0"
                         onClick={() => setQuizDialog({ lesson })}
@@ -457,7 +461,7 @@ export default function CourseDetailPage() {
                     ) : null}
 
                     {/* Management actions */}
-                    {canManage && (
+                    {canEdit && (
                       <div className="flex gap-1 shrink-0">
                         <Button
                           variant="ghost" size="sm" className="h-7 w-7 p-0"
@@ -579,7 +583,7 @@ export default function CourseDetailPage() {
           lesson={quizDialog.lesson}
           quiz={quizData}
           isLoading={quizLoading}
-          canManage={canManage}
+          canManage={canEdit}
           isPending={createQuizMutation.isPending || updateQuizMutation.isPending || deleteQuizMutation.isPending}
           onClose={() => setQuizDialog(null)}
           onCreate={(data) => createQuizMutation.mutate({ lesson_id: quizDialog.lesson.id, ...data })}
