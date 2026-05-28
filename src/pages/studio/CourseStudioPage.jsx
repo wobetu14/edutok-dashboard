@@ -191,9 +191,9 @@ export default function CourseStudioPage() {
 
   // ── Access ───────────────────────────────────────────────────────────────────
 
-  const canManage = user?.role !== 'super_admin' && !!course &&
+  const canManage = !!course &&
     (course.status === 'draft' || course.status === 'rejected' || course.status === 'approved') &&
-    (course.instructor_id === user?.id || user?.role === 'org_admin')
+    course.instructor_id === user?.id
   const canSubmit = canManage && course?.status === 'draft' && sortedLessons.length > 0
 
   // ── Render ───────────────────────────────────────────────────────────────────

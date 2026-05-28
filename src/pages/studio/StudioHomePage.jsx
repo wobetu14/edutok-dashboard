@@ -41,7 +41,7 @@ export default function StudioHomePage() {
 
   const { data: coursesData, isLoading } = useQuery({
     queryKey: ['studio-courses'],
-    queryFn:  () => api.listMyCourses({ limit: 50, page: 1 }).then((r) => r.data),
+    queryFn:  () => api.listMyCourses({ limit: 50, page: 1, instructor_id: user?.id }).then((r) => r.data),
   })
 
   const courses = coursesData?.data ?? []
