@@ -191,9 +191,9 @@ export default function CourseStudioPage() {
 
   // ── Access ───────────────────────────────────────────────────────────────────
 
-  const canManage = user?.role !== 'super_admin' && !!course && (
-    course.instructor_id === user?.id || user?.role === 'org_admin'
-  )
+  const canManage = user?.role !== 'super_admin' && !!course &&
+    (course.status === 'draft' || course.status === 'rejected' || course.status === 'approved') &&
+    (course.instructor_id === user?.id || user?.role === 'org_admin')
   const canSubmit = canManage && course?.status === 'draft' && sortedLessons.length > 0
 
   // ── Render ───────────────────────────────────────────────────────────────────
@@ -344,6 +344,24 @@ export default function CourseStudioPage() {
           'flex-1 overflow-y-auto',
           mobileTab === 'editor' ? 'flex flex-col' : 'hidden lg:flex lg:flex-col',
         )}>
+          {course.status === 'pending' && (
+            <div className="flex items-center gap-2 px-5 py-2.5 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs shrink-0">
+              <AlertCircle size={13} className="shrink-0" />
+              <span>This course is <strong>under review</strong>. Editing is locked until the review is complete.</span>
+            </div>
+          )}
+          {course.status === 'approved' && (
+            <div className="flex items-center gap-2 px-5 py-2.5 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs shrink-0">
+              <AlertCircle size={13} className="shrink-0" />
+              <span>This course is <strong>approved and published</strong>. Saving any change will resubmit it for review and notify the org admin.</span>
+            </div>
+          )}
+          {course.status === 'rejected' && (
+            <div className="flex items-center gap-2 px-5 py-2.5 bg-red-50 dark:bg-red-950/30 border-b border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 text-xs shrink-0">
+              <X size={13} className="shrink-0" />
+              <span>This course was <strong>rejected</strong>. Update the content and re-submit for review.</span>
+            </div>
+          )}
           {selected === 'settings' ? (
             <CourseSettingsPanel
               course={course}
