@@ -194,7 +194,7 @@ export default function CourseStudioPage() {
   const canManage = user?.role !== 'super_admin' && !!course && (
     course.instructor_id === user?.id || user?.role === 'org_admin'
   )
-  const canSubmit = canManage && course?.status === 'pending' && sortedLessons.length > 0
+  const canSubmit = canManage && course?.status === 'draft' && sortedLessons.length > 0
 
   // ── Render ───────────────────────────────────────────────────────────────────
 

@@ -6,6 +6,7 @@ export const ROLES = {
 };
 
 export const COURSE_STATUS = {
+  draft:    { label: 'Draft',          color: 'bg-gray-100 text-gray-500' },
   pending:  { label: 'Pending Review', color: 'bg-warning/15 text-yellow-700' },
   approved: { label: 'Approved',       color: 'bg-success/15 text-green-700' },
   rejected: { label: 'Rejected',       color: 'bg-danger/15 text-red-700' },
