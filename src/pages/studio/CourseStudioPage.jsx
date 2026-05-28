@@ -275,10 +275,9 @@ export default function CourseStudioPage() {
 
         {/* ── Left: Course Outline ──────────────────────────────────────────────── */}
         <aside className={cn(
-          'w-72 shrink-0 border-r border-border flex flex-col bg-card h-full',
+          'w-[30%] shrink-0 border-r border-border flex flex-col bg-card h-full',
           'lg:flex',
           mobileTab === 'outline' ? 'flex' : 'hidden',
-          'lg:w-72',
         )}>
           {/* Outline header */}
           <div className="px-4 py-3 border-b border-border flex items-center justify-between">
