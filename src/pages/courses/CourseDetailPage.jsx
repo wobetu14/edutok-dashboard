@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft, Plus, ChevronUp, ChevronDown, Pencil, Trash2,
-  FileText, ImageIcon, Video, CheckCircle, XCircle, BookOpen, Users, Eye,
+  FileText, ImageIcon, Video, CheckCircle, XCircle, BookOpen, Users, X,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -111,7 +111,7 @@ export default function CourseDetailPage() {
 
   // Dialog states
   const [editCourseOpen, setEditCourseOpen] = useState(false)
-  const [viewLesson, setViewLesson]         = useState(null)  // lesson object
+  const [selectedLesson, setSelectedLesson] = useState(null)  // lesson object — activates split view
   const [lessonDialog, setLessonDialog]     = useState(null)  // { mode, lesson? }
   const [quizDialog, setQuizDialog]         = useState(null)  // { lesson }
   const [deleteLessonTarget, setDeleteLessonTarget] = useState(null)
@@ -353,161 +353,201 @@ export default function CourseDetailPage() {
         </div>
       </Card>
 
-      {/* Tabs */}
-      <div className="flex gap-1 border-b border-border">
-        {[
-          { key: 'overview', label: 'Overview' },
-          { key: 'lessons',  label: `Lessons (${sortedLessons.length})` },
-          { key: 'students', label: `Students (${course.enrolled_count ?? 0})` },
-        ].map((t) => (
-          <button
-            key={t.key}
-            className={cn(
-              'px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px',
-              tab === t.key
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground',
-            )}
-            onClick={() => setTab(t.key)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      {/* ── Split view: lesson list + lesson detail ─────────────────────────── */}
+      {selectedLesson ? (
+        <div className="flex border border-border rounded-lg overflow-hidden" style={{ height: 'calc(100vh - 18rem)' }}>
 
-      {/* ── Overview tab ──────────────────────────────────────────────────────── */}
-      {tab === 'overview' && (
-        <Card className="p-6 flex flex-col gap-4">
-          {course.description ? (
-            <div>
-              <h3 className="text-sm font-semibold text-foreground mb-1">Description</h3>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{course.description}</p>
+          {/* Left: lesson list */}
+          <aside className="w-[35%] shrink-0 border-r border-border flex flex-col bg-card">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-foreground truncate">{course.title}</p>
+                <p className="text-xs text-muted-foreground">{sortedLessons.length} lesson{sortedLessons.length !== 1 ? 's' : ''}</p>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                {canEdit && (
+                  <Button size="sm" className="gap-1 text-xs h-7 px-2" onClick={(e) => { e.stopPropagation(); setLessonDialog({ mode: 'add' }) }}>
+                    <Plus size={12} /> Add
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Close detail view" onClick={() => setSelectedLesson(null)}>
+                  <X size={14} />
+                </Button>
+              </div>
             </div>
-          ) : (
-            <p className="text-sm text-muted-foreground italic">No description provided.</p>
-          )}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-2 border-t border-border">
-            <div>
-              <p className="text-xs text-muted-foreground">Difficulty</p>
-              <Badge color={DIFFICULTY[course.difficulty]?.color} className="mt-1">{course.difficulty}</Badge>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Visibility</p>
-              <Badge color={COURSE_VISIBILITY[course.visibility]?.color} className="mt-1">
-                {COURSE_VISIBILITY[course.visibility]?.label}
-              </Badge>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Total Duration</p>
-              <p className="text-sm font-medium mt-1">{formatDuration(course.total_duration_secs)}</p>
-            </div>
-          </div>
-        </Card>
-      )}
 
-      {/* ── Lessons tab ───────────────────────────────────────────────────────── */}
-      {tab === 'lessons' && (
-        <div className="flex flex-col gap-3">
-          {canEdit && (
-            <div className="flex justify-end">
-              <Button className="gap-2" onClick={() => setLessonDialog({ mode: 'add' })}>
-                <Plus size={14} /> Add Lesson
-              </Button>
-            </div>
-          )}
-
-          {sortedLessons.length === 0 ? (
-            <Card className="p-10 text-center text-muted-foreground text-sm">
-              No lessons yet.{canEdit ? ' Click "Add Lesson" to get started.' : ''}
-            </Card>
-          ) : (
-            <Card>
-              <div className="divide-y divide-border">
-                {sortedLessons.map((lesson, idx) => (
-                  <div
-                    key={lesson.id}
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors"
-                  >
-                    {/* Order number */}
-                    <span className="text-xs text-muted-foreground w-5 shrink-0 text-right">
-                      {idx + 1}
-                    </span>
-
-                    {/* Type icon */}
-                    <span className="shrink-0">{LESSON_TYPE_ICON[lesson.type]}</span>
-
-                    {/* Title + meta */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{lesson.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {LESSON_TYPE_LABEL[lesson.type]} · {formatDuration(lesson.duration_secs)}
-                      </p>
-                    </div>
-
-                    {/* Quiz badge */}
-                    {lesson.has_quiz ? (
-                      <button
-                        className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium hover:bg-primary/20 transition-colors shrink-0"
-                        onClick={() => setQuizDialog({ lesson })}
-                      >
-                        Quiz
-                      </button>
-                    ) : canEdit ? (
-                      <button
-                        className="text-xs px-2 py-0.5 rounded-full border border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors shrink-0"
-                        onClick={() => setQuizDialog({ lesson })}
-                      >
-                        + Quiz
-                      </button>
-                    ) : null}
-
-                    {/* View button — visible to all roles */}
-                    <Button
-                      variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground shrink-0"
-                      title="View lesson"
-                      onClick={() => setViewLesson(lesson)}
-                    >
-                      <Eye size={13} />
-                    </Button>
-
-                    {/* Management actions */}
-                    {canEdit && (
-                      <div className="flex gap-1 shrink-0">
-                        <Button
-                          variant="ghost" size="sm" className="h-7 w-7 p-0"
-                          disabled={idx === 0 || reorderMutation.isPending}
-                          onClick={() => moveLesson(lesson.id, 'up')}
-                        >
-                          <ChevronUp size={13} />
-                        </Button>
-                        <Button
-                          variant="ghost" size="sm" className="h-7 w-7 p-0"
-                          disabled={idx === sortedLessons.length - 1 || reorderMutation.isPending}
-                          onClick={() => moveLesson(lesson.id, 'down')}
-                        >
-                          <ChevronDown size={13} />
-                        </Button>
-                        <Button
-                          variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
-                          onClick={() => setLessonDialog({ mode: 'edit', lesson })}
-                        >
-                          <Pencil size={13} />
-                        </Button>
-                        <Button
-                          variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-                          onClick={() => setDeleteLessonTarget(lesson)}
-                        >
-                          <Trash2 size={13} />
-                        </Button>
-                      </div>
-                    )}
+            <div className="flex-1 overflow-y-auto divide-y divide-border">
+              {sortedLessons.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-8">No lessons yet.</p>
+              ) : sortedLessons.map((lesson, idx) => (
+                <div
+                  key={lesson.id}
+                  className={cn(
+                    'flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors',
+                    selectedLesson.id === lesson.id
+                      ? 'bg-primary/8 border-l-2 border-primary'
+                      : 'hover:bg-muted/40 border-l-2 border-transparent',
+                  )}
+                  onClick={() => setSelectedLesson(lesson)}
+                >
+                  <span className="text-xs text-muted-foreground w-5 shrink-0 text-right">{idx + 1}</span>
+                  <span className="shrink-0">{LESSON_TYPE_ICON[lesson.type]}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className={cn('text-sm truncate', selectedLesson.id === lesson.id ? 'font-semibold text-primary' : 'text-foreground')}>
+                      {lesson.title}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{LESSON_TYPE_LABEL[lesson.type]} · {formatDuration(lesson.duration_secs)}</p>
                   </div>
-                ))}
+                  {lesson.has_quiz && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium shrink-0">Quiz</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </aside>
+
+          {/* Right: lesson detail */}
+          <main className="flex-1 overflow-y-auto bg-background">
+            <LessonContentPanel
+              key={selectedLesson.id}
+              lesson={selectedLesson}
+              canEdit={canEdit}
+              onEdit={() => setLessonDialog({ mode: 'edit', lesson: selectedLesson })}
+              onDelete={() => setDeleteLessonTarget(selectedLesson)}
+              onQuiz={() => setQuizDialog({ lesson: selectedLesson })}
+            />
+          </main>
+        </div>
+
+      ) : (
+        <>
+          {/* Tabs */}
+          <div className="flex gap-1 border-b border-border">
+            {[
+              { key: 'overview', label: 'Overview' },
+              { key: 'lessons',  label: `Lessons (${sortedLessons.length})` },
+              { key: 'students', label: `Students (${course.enrolled_count ?? 0})` },
+            ].map((t) => (
+              <button
+                key={t.key}
+                className={cn(
+                  'px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px',
+                  tab === t.key
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground',
+                )}
+                onClick={() => setTab(t.key)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* ── Overview tab ────────────────────────────────────────────────────── */}
+          {tab === 'overview' && (
+            <Card className="p-6 flex flex-col gap-4">
+              {course.description ? (
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground mb-1">Description</h3>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{course.description}</p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">No description provided.</p>
+              )}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-2 border-t border-border">
+                <div>
+                  <p className="text-xs text-muted-foreground">Difficulty</p>
+                  <Badge color={DIFFICULTY[course.difficulty]?.color} className="mt-1">{course.difficulty}</Badge>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Visibility</p>
+                  <Badge color={COURSE_VISIBILITY[course.visibility]?.color} className="mt-1">
+                    {COURSE_VISIBILITY[course.visibility]?.label}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Total Duration</p>
+                  <p className="text-sm font-medium mt-1">{formatDuration(course.total_duration_secs)}</p>
+                </div>
               </div>
             </Card>
           )}
-        </div>
-      )}
+
+          {/* ── Lessons tab ─────────────────────────────────────────────────────── */}
+          {tab === 'lessons' && (
+            <div className="flex flex-col gap-3">
+              {canEdit && (
+                <div className="flex justify-end">
+                  <Button className="gap-2" onClick={() => setLessonDialog({ mode: 'add' })}>
+                    <Plus size={14} /> Add Lesson
+                  </Button>
+                </div>
+              )}
+              {sortedLessons.length === 0 ? (
+                <Card className="p-10 text-center text-muted-foreground text-sm">
+                  No lessons yet.{canEdit ? ' Click "Add Lesson" to get started.' : ''}
+                </Card>
+              ) : (
+                <Card>
+                  <div className="divide-y divide-border">
+                    {sortedLessons.map((lesson, idx) => (
+                      <div
+                        key={lesson.id}
+                        className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors cursor-pointer"
+                        onClick={() => setSelectedLesson(lesson)}
+                      >
+                        <span className="text-xs text-muted-foreground w-5 shrink-0 text-right">{idx + 1}</span>
+                        <span className="shrink-0">{LESSON_TYPE_ICON[lesson.type]}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{lesson.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {LESSON_TYPE_LABEL[lesson.type]} · {formatDuration(lesson.duration_secs)}
+                          </p>
+                        </div>
+                        {lesson.has_quiz ? (
+                          <button
+                            className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium hover:bg-primary/20 transition-colors shrink-0"
+                            onClick={(e) => { e.stopPropagation(); setQuizDialog({ lesson }) }}
+                          >
+                            Quiz
+                          </button>
+                        ) : canEdit ? (
+                          <button
+                            className="text-xs px-2 py-0.5 rounded-full border border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors shrink-0"
+                            onClick={(e) => { e.stopPropagation(); setQuizDialog({ lesson }) }}
+                          >
+                            + Quiz
+                          </button>
+                        ) : null}
+                        {canEdit && (
+                          <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0"
+                              disabled={idx === 0 || reorderMutation.isPending}
+                              onClick={() => moveLesson(lesson.id, 'up')}>
+                              <ChevronUp size={13} />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0"
+                              disabled={idx === sortedLessons.length - 1 || reorderMutation.isPending}
+                              onClick={() => moveLesson(lesson.id, 'down')}>
+                              <ChevronDown size={13} />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                              onClick={() => setLessonDialog({ mode: 'edit', lesson })}>
+                              <Pencil size={13} />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                              onClick={() => setDeleteLessonTarget(lesson)}>
+                              <Trash2 size={13} />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+            </div>
+          )}
 
       {/* ── Students tab ──────────────────────────────────────────────────────── */}
       {tab === 'students' && (
@@ -553,13 +593,7 @@ export default function CourseDetailPage() {
           />
         </Card>
       )}
-
-      {/* ── Lesson View Dialog ────────────────────────────────────────────────── */}
-      {viewLesson && (
-        <LessonViewDialog
-          lesson={viewLesson}
-          onClose={() => setViewLesson(null)}
-        />
+        </>
       )}
 
       {/* ── Edit Course Dialog ─────────────────────────────────────────────────── */}
@@ -693,9 +727,9 @@ export default function CourseDetailPage() {
   )
 }
 
-// ── Lesson View Dialog ────────────────────────────────────────────────────────
+// ── Lesson Content Panel (inline split-view right panel) ─────────────────────
 
-function LessonViewDialog({ lesson, onClose }) {
+function LessonContentPanel({ lesson, canEdit, onEdit, onDelete, onQuiz }) {
   const { data: full, isLoading } = useQuery({
     queryKey: ['lesson-content', lesson.id],
     queryFn:  () => api.getLesson(lesson.id).then((r) => r.data.data),
@@ -712,44 +746,67 @@ function LessonViewDialog({ lesson, onClose }) {
   const content = full?.content_json
 
   return (
-    <Dialog open onOpenChange={(o) => { if (!o) onClose() }}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+    <div className="flex flex-col h-full">
+
+      {/* Panel header */}
+      <div className="flex items-start justify-between gap-4 px-6 py-4 border-b border-border bg-card shrink-0">
+        <div className="flex flex-col gap-1.5 min-w-0">
           <div className="flex items-center gap-2">
             <span className="shrink-0">{LESSON_TYPE_ICON[lesson.type]}</span>
-            <DialogTitle className="truncate">{lesson.title}</DialogTitle>
+            <h2 className="text-base font-semibold text-foreground truncate">{lesson.title}</h2>
           </div>
-          <div className="flex items-center gap-2 pt-1">
-            <span className="text-xs text-muted-foreground capitalize bg-muted px-2 py-0.5 rounded-md">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-md capitalize">
               {LESSON_TYPE_LABEL[lesson.type]}
             </span>
             {lesson.duration_secs > 0 && (
               <span className="text-xs text-muted-foreground">{formatDuration(lesson.duration_secs)}</span>
             )}
+            {lesson.has_quiz && (
+              <button
+                className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium hover:bg-primary/20 transition-colors"
+                onClick={onQuiz}
+              >
+                Quiz
+              </button>
+            )}
           </div>
-        </DialogHeader>
+        </div>
+        {canEdit && (
+          <div className="flex gap-2 shrink-0">
+            <Button size="sm" variant="outline" className="gap-1.5 h-8" onClick={onEdit}>
+              <Pencil size={13} /> Edit
+            </Button>
+            <Button size="sm" variant="outline" className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 border-destructive/20" onClick={onDelete}>
+              <Trash2 size={13} />
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
 
         {isLoading ? (
-          <div className="flex justify-center py-10"><Spinner /></div>
+          <div className="flex justify-center py-16"><Spinner /></div>
         ) : (
-          <div className="flex flex-col gap-5 py-2">
-
-            {/* Text content */}
+          <>
+            {/* Text */}
             {lesson.type === 'text' && (
-              <div className="text-sm text-foreground whitespace-pre-wrap leading-relaxed border border-border rounded-lg p-4 bg-muted/20">
+              <div className="text-sm text-foreground whitespace-pre-wrap leading-relaxed border border-border rounded-lg p-5 bg-muted/20 min-h-[200px]">
                 {content?.body || <span className="text-muted-foreground italic">No content.</span>}
               </div>
             )}
 
-            {/* Image content */}
+            {/* Images */}
             {lesson.type === 'image' && Array.isArray(content) && content.length > 0 && (
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-5">
                 {content.map((item, i) => (
-                  <div key={i} className="flex flex-col gap-1.5">
+                  <div key={i} className="flex flex-col gap-2">
                     <img
                       src={item.uri}
                       alt={item.caption || `Image ${i + 1}`}
-                      className="w-full rounded-lg border border-border object-cover max-h-64"
+                      className="w-full rounded-lg border border-border object-cover max-h-80"
                     />
                     {item.caption && (
                       <p className="text-xs text-muted-foreground text-center italic">{item.caption}</p>
@@ -759,9 +816,9 @@ function LessonViewDialog({ lesson, onClose }) {
               </div>
             )}
 
-            {/* Video content */}
+            {/* Video */}
             {lesson.type === 'video' && content && (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-3">
                 {content.youtubeId ? (
                   <div className="aspect-video rounded-lg overflow-hidden border border-border bg-black">
                     <iframe
@@ -773,55 +830,51 @@ function LessonViewDialog({ lesson, onClose }) {
                     />
                   </div>
                 ) : content.url ? (
-                  <video
-                    src={content.url}
-                    controls
-                    className="w-full rounded-lg border border-border max-h-64"
-                  />
+                  <video src={content.url} controls className="w-full rounded-lg border border-border" />
                 ) : null}
               </div>
             )}
 
-            {/* Quiz summary */}
+            {/* Quiz detail */}
             {lesson.has_quiz && (
-              <div className="flex flex-col gap-2 border-t border-border pt-4">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Quiz</p>
+              <div className="flex flex-col gap-3 border-t border-border pt-5">
+                <p className="text-sm font-semibold text-foreground">Quiz</p>
                 {quizLoading ? (
                   <Spinner />
                 ) : quiz ? (
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-3">
                     <Badge color="bg-primary/10 text-primary" className="self-start">
                       {quiz.type === 'truefalse' ? 'True / False'
                         : quiz.type === 'multipleChoice' ? 'Multiple Choice'
                         : 'Image Matching'}
                       {' · '}{quiz.questions_json?.length} question{quiz.questions_json?.length !== 1 ? 's' : ''}
                     </Badge>
-                    <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto">
+                    <div className="flex flex-col gap-2">
                       {(quiz.questions_json ?? []).map((q, i) => (
-                        <div key={i} className="text-xs border border-border rounded p-2 bg-muted/20">
+                        <div key={i} className="text-xs border border-border rounded-lg p-3 bg-muted/20">
                           {quiz.type !== 'imageMatching' && (
-                            <p className="font-medium">{i + 1}. {q.question}</p>
+                            <p className="font-medium text-foreground">{i + 1}. {q.question}</p>
                           )}
                           {quiz.type === 'truefalse' && (
-                            <p className="text-muted-foreground mt-0.5">Answer: <span className="font-medium">{q.answer ? 'True' : 'False'}</span></p>
+                            <p className="text-muted-foreground mt-1">Answer: <span className="font-semibold text-foreground">{q.answer ? 'True' : 'False'}</span></p>
                           )}
                           {quiz.type === 'multipleChoice' && (
-                            <div className="mt-1 flex flex-col gap-0.5">
+                            <div className="mt-2 flex flex-col gap-1">
                               {(q.options ?? []).map((opt, j) => (
-                                <span key={j} className={cn('px-1.5', opt === q.answer ? 'text-green-700 font-semibold' : 'text-muted-foreground')}>
+                                <span key={j} className={cn('px-2 py-0.5 rounded', opt === q.answer ? 'bg-green-100 text-green-700 font-semibold' : 'text-muted-foreground')}>
                                   {opt === q.answer ? '✓ ' : '· '}{opt}
                                 </span>
                               ))}
                             </div>
                           )}
                           {quiz.type === 'imageMatching' && (
-                            <div className="flex flex-col gap-0.5">
+                            <div className="mt-1 flex flex-col gap-1">
                               {(q.pairs ?? []).map((p, j) => (
-                                <span key={j} className="flex gap-2 text-muted-foreground">
-                                  <span className="truncate max-w-[140px]">{p.image}</span>
+                                <div key={j} className="flex gap-2 text-muted-foreground">
+                                  <span className="truncate max-w-[160px]">{p.image}</span>
                                   <span>→</span>
                                   <span className="font-medium text-foreground">{p.label}</span>
-                                </span>
+                                </div>
                               ))}
                             </div>
                           )}
@@ -832,15 +885,10 @@ function LessonViewDialog({ lesson, onClose }) {
                 ) : null}
               </div>
             )}
-
-          </div>
+          </>
         )}
-
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Close</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   )
 }
 
