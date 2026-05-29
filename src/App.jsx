@@ -124,7 +124,7 @@ export default function App() {
         <Route
           path="/analytics"
           element={
-            <RequireAuth roles={['super_admin', 'org_admin']}>
+            <RequireAuth roles={['super_admin', 'org_admin', 'instructor']}>
               <AnalyticsPage />
             </RequireAuth>
           }
