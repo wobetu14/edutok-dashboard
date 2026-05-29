@@ -5,7 +5,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft, Clapperboard, Settings, Plus, ChevronUp, ChevronDown,
   Trash2, FileText, ImageIcon, Video, Send, Check, X, AlertCircle,
-  Upload, Loader2, GripVertical, BookOpen, LayoutList,
+  Upload, Loader2, BookOpen, LayoutList,
+  Heart, Bookmark, MessageCircle, CornerDownRight, Share2, TrendingUp,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -22,6 +23,25 @@ import { cn } from '@/lib/utils'
 import { z } from 'zod'
 
 // ── Shared helpers ─────────────────────────────────────────────────────────────
+
+function formatCount(n) {
+  if (!n) return '0'
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000)     return `${(n / 1_000).toFixed(1)}K`
+  return String(n)
+}
+
+function lessonEng(lesson) {
+  const replies  = lesson.replies_count  ?? 0
+  const comments = Math.max(0, (lesson.comments_count ?? 0) - replies)
+  return {
+    likes:    lesson.likes_count   ?? 0,
+    saves:    lesson.saves_count   ?? 0,
+    comments,
+    replies,
+    shares:   lesson.shares_count  ?? 0,
+  }
+}
 
 const inputClass  = 'w-full px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring'
 const selectClass = 'w-full px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring'
@@ -463,9 +483,25 @@ function LessonOutlineItem({ lesson, idx, total, isSelected, isReordering, onSel
         <p className={cn('text-sm truncate', isSelected ? 'font-medium' : 'text-foreground')}>
           {lesson.title}
         </p>
-        {lesson.has_quiz && (
-          <span className="text-xs text-primary/70">+ quiz</span>
-        )}
+        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+          {lesson.has_quiz && (
+            <span className="text-xs text-primary/70">+ quiz</span>
+          )}
+          {(() => {
+            const e = lessonEng(lesson)
+            const total = e.likes + e.saves + e.comments + e.replies + e.shares
+            if (total === 0) return null
+            return (
+              <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                <span className="flex items-center gap-0.5"><Heart size={9} className="text-rose-400" /> {formatCount(e.likes)}</span>
+                <span className="flex items-center gap-0.5"><Bookmark size={9} className="text-amber-400" /> {formatCount(e.saves)}</span>
+                <span className="flex items-center gap-0.5"><MessageCircle size={9} className="text-blue-400" /> {formatCount(e.comments)}</span>
+                <span className="flex items-center gap-0.5"><CornerDownRight size={9} className="text-indigo-400" /> {formatCount(e.replies)}</span>
+                <span className="flex items-center gap-0.5"><Share2 size={9} className="text-green-400" /> {formatCount(e.shares)}</span>
+              </span>
+            )
+          })()}
+        </div>
       </div>
       <div
         className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
@@ -906,6 +942,38 @@ function LessonEditorPanel({ courseId, lesson, canManage, isSaving, saveError, o
             <AlertCircle size={14} /> {saveError}
           </div>
         )}
+
+        {/* Engagement stats — data is already in lesson prop from getCourse */}
+        {(() => {
+          const e = lessonEng(lesson)
+          const total = e.likes + e.saves + e.comments + e.replies + e.shares
+          const METRICS = [
+            { key: 'likes',    label: 'Likes',    Icon: Heart,           color: 'text-rose-500',   bg: 'bg-rose-50 dark:bg-rose-950/30' },
+            { key: 'saves',    label: 'Saves',    Icon: Bookmark,        color: 'text-amber-500',  bg: 'bg-amber-50 dark:bg-amber-950/30' },
+            { key: 'comments', label: 'Comments', Icon: MessageCircle,   color: 'text-blue-500',   bg: 'bg-blue-50 dark:bg-blue-950/30' },
+            { key: 'replies',  label: 'Replies',  Icon: CornerDownRight, color: 'text-indigo-500', bg: 'bg-indigo-50 dark:bg-indigo-950/30' },
+            { key: 'shares',   label: 'Shares',   Icon: Share2,          color: 'text-green-500',  bg: 'bg-green-50 dark:bg-green-950/30' },
+          ]
+          return (
+            <div className="flex flex-col gap-2.5 pb-1 border-b border-border">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                <TrendingUp size={12} /> Engagement
+              </p>
+              <div className="grid grid-cols-5 gap-2">
+                {METRICS.map(({ key, label, Icon, color, bg }) => (
+                  <div key={key} className={cn('flex flex-col items-center gap-1 py-2.5 px-1 rounded-lg border border-border', bg)}>
+                    <Icon size={13} className={color} />
+                    <span className="text-sm font-bold text-foreground tabular-nums">{formatCount(e[key])}</span>
+                    <span className="text-[10px] text-muted-foreground leading-tight text-center">{label}</span>
+                  </div>
+                ))}
+              </div>
+              {total === 0 && (
+                <p className="text-xs text-muted-foreground">No engagement yet — stats appear once students interact with this lesson.</p>
+              )}
+            </div>
+          )
+        })()}
 
         {/* Title */}
         <div className="flex flex-col gap-1.5">
