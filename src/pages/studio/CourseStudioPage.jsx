@@ -3,11 +3,20 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  ArrowLeft, Clapperboard, Settings, Plus, ChevronUp, ChevronDown,
+  ArrowLeft, Clapperboard, Settings, Plus,
   Trash2, FileText, ImageIcon, Video, Send, Check, X, AlertCircle,
-  Upload, Loader2, BookOpen, LayoutList,
+  Upload, Loader2, BookOpen, LayoutList, GripVertical,
   Heart, Bookmark, MessageCircle, CornerDownRight, Share2, TrendingUp,
 } from 'lucide-react'
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor,
+  useSensor, useSensors,
+} from '@dnd-kit/core'
+import {
+  SortableContext, useSortable, verticalListSortingStrategy,
+  sortableKeyboardCoordinates, arrayMove,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -199,14 +208,20 @@ export default function CourseStudioPage() {
     onSuccess:  invalidate,
   })
 
-  const moveLesson = (lessonId, dir) => {
-    const idx = sortedLessons.findIndex((l) => l.id === lessonId)
-    if (dir === 'up' && idx === 0) return
-    if (dir === 'down' && idx === sortedLessons.length - 1) return
-    const newList = [...sortedLessons]
-    const swapIdx = dir === 'up' ? idx - 1 : idx + 1
-    ;[newList[idx], newList[swapIdx]] = [newList[swapIdx], newList[idx]]
-    reorderMutation.mutate({ course_id: courseId, items: newList.map((l, i) => ({ id: l.id, order_index: i })) })
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+
+  const handleDragEnd = ({ active, over }) => {
+    if (!over || active.id === over.id) return
+    const oldIdx = sortedLessons.findIndex((l) => l.id === active.id)
+    const newIdx = sortedLessons.findIndex((l) => l.id === over.id)
+    const reordered = arrayMove(sortedLessons, oldIdx, newIdx)
+    reorderMutation.mutate({
+      course_id: courseId,
+      items: reordered.map((l, i) => ({ id: l.id, order_index: i })),
+    })
   }
 
   // ── Access ───────────────────────────────────────────────────────────────────
@@ -323,27 +338,37 @@ export default function CourseStudioPage() {
               <span className="text-sm font-medium">Course Settings</span>
             </button>
 
-            {/* Lessons list */}
-            <div className="py-1">
-              {sortedLessons.length === 0 ? (
-                <div className="px-4 py-8 text-center">
-                  <p className="text-xs text-muted-foreground">No lessons yet.</p>
-                  <p className="text-xs text-muted-foreground">Add your first lesson below.</p>
+            {/* Lessons list — drag to reorder */}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={sortedLessons.map((l) => l.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="py-1">
+                  {sortedLessons.length === 0 ? (
+                    <div className="px-4 py-8 text-center">
+                      <p className="text-xs text-muted-foreground">No lessons yet.</p>
+                      <p className="text-xs text-muted-foreground">Add your first lesson below.</p>
+                    </div>
+                  ) : sortedLessons.map((lesson, idx) => (
+                    <SortableLessonItem
+                      key={lesson.id}
+                      lesson={lesson}
+                      idx={idx}
+                      isSelected={selected === lesson.id}
+                      canManage={canManage}
+                      isReordering={reorderMutation.isPending}
+                      onSelect={() => { setSelected(lesson.id); setMobileTab('editor') }}
+                      onDelete={() => setDeleteId(lesson.id)}
+                    />
+                  ))}
                 </div>
-              ) : sortedLessons.map((lesson, idx) => (
-                <LessonOutlineItem
-                  key={lesson.id}
-                  lesson={lesson}
-                  idx={idx}
-                  total={sortedLessons.length}
-                  isSelected={selected === lesson.id}
-                  isReordering={reorderMutation.isPending}
-                  onSelect={() => { setSelected(lesson.id); setMobileTab('editor') }}
-                  onMove={(dir) => moveLesson(lesson.id, dir)}
-                  onDelete={() => setDeleteId(lesson.id)}
-                />
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
           </div>
 
           {/* Add Lesson button (fixed at bottom of sidebar) */}
@@ -464,21 +489,59 @@ export default function CourseStudioPage() {
   )
 }
 
-// ── Lesson outline item ────────────────────────────────────────────────────────
+// ── Sortable lesson outline item ──────────────────────────────────────────────
 
-function LessonOutlineItem({ lesson, idx, total, isSelected, isReordering, onSelect, onMove, onDelete }) {
+function SortableLessonItem({ lesson, idx, isSelected, canManage, isReordering, onSelect, onDelete }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: lesson.id, disabled: !canManage })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
   return (
     <div
+      ref={setNodeRef}
+      style={style}
       className={cn(
-        'group flex items-center gap-2 px-3 py-2.5 cursor-pointer transition-colors',
+        'group flex items-center gap-2 px-3 py-2.5 cursor-pointer transition-colors select-none',
         isSelected ? 'bg-primary/8 text-primary' : 'hover:bg-muted/50',
+        isDragging && 'opacity-50 bg-primary/5 shadow-md rounded-md z-50',
       )}
       onClick={onSelect}
     >
-      <span className="text-xs text-muted-foreground w-5 text-right shrink-0 font-mono">
+      {/* Drag handle — only shown when canManage */}
+      {canManage ? (
+        <button
+          {...attributes}
+          {...listeners}
+          className={cn(
+            'shrink-0 flex items-center justify-center w-5 h-5 rounded text-muted-foreground/40',
+            'hover:text-muted-foreground transition-colors',
+            isDragging ? 'cursor-grabbing' : 'cursor-grab',
+          )}
+          tabIndex={-1}
+          onClick={(e) => e.stopPropagation()}
+          title="Drag to reorder"
+        >
+          <GripVertical size={13} />
+        </button>
+      ) : (
+        <span className="w-5 shrink-0" />
+      )}
+
+      <span className="text-xs text-muted-foreground w-4 text-right shrink-0 font-mono">
         {idx + 1}
       </span>
       <span className="shrink-0">{LESSON_TYPE_ICON[lesson.type]}</span>
+
       <div className="flex-1 min-w-0">
         <p className={cn('text-sm truncate', isSelected ? 'font-medium' : 'text-foreground')}>
           {lesson.title}
@@ -489,8 +552,8 @@ function LessonOutlineItem({ lesson, idx, total, isSelected, isReordering, onSel
           )}
           {(() => {
             const e = lessonEng(lesson)
-            const total = e.likes + e.saves + e.comments + e.replies + e.shares
-            if (total === 0) return null
+            const engTotal = e.likes + e.saves + e.comments + e.replies + e.shares
+            if (engTotal === 0) return null
             return (
               <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                 <span className="flex items-center gap-0.5"><Heart size={9} className="text-rose-400" /> {formatCount(e.likes)}</span>
@@ -503,31 +566,17 @@ function LessonOutlineItem({ lesson, idx, total, isSelected, isReordering, onSel
           })()}
         </div>
       </div>
-      <div
-        className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-        onClick={(e) => e.stopPropagation()}
-      >
+
+      {/* Delete button */}
+      {canManage && (
         <button
-          className="w-5 h-5 flex items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-foreground disabled:opacity-30"
-          disabled={idx === 0 || isReordering}
-          onClick={() => onMove('up')}
-        >
-          <ChevronUp size={12} />
-        </button>
-        <button
-          className="w-5 h-5 flex items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-foreground disabled:opacity-30"
-          disabled={idx === total - 1 || isReordering}
-          onClick={() => onMove('down')}
-        >
-          <ChevronDown size={12} />
-        </button>
-        <button
-          className="w-5 h-5 flex items-center justify-center rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
-          onClick={onDelete}
+          className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 w-5 h-5 flex items-center justify-center rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+          onClick={(e) => { e.stopPropagation(); onDelete() }}
+          title="Delete lesson"
         >
           <Trash2 size={11} />
         </button>
-      </div>
+      )}
     </div>
   )
 }
