@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { ShieldAlert, Eye, EyeOff, CheckCircle2 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Spinner } from '@/components/ui/Spinner'
 import { api, client } from '@/api/client'
 import { useAuth } from '@/context/AuthContext'
 
@@ -196,7 +195,12 @@ export default function ChangePasswordPage() {
               )}
 
               <Button type="submit" className="w-full" disabled={isPending}>
-                {isPending ? <Spinner size="sm" /> : 'Set New Password'}
+                {isPending ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/70 border-t-transparent rounded-full animate-spin" />
+                    Setting password…
+                  </>
+                ) : 'Set New Password'}
               </Button>
             </form>
           )}
