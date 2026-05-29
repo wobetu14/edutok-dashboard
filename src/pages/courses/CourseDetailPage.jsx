@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft, Plus, ChevronUp, ChevronDown, Pencil, Trash2,
   FileText, ImageIcon, Video, CheckCircle, XCircle, BookOpen, Users, X,
+  Heart, Bookmark, MessageCircle, CornerDownRight, Share2, TrendingUp,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -33,6 +34,46 @@ const LESSON_TYPE_ICON = {
 }
 
 const LESSON_TYPE_LABEL = { text: 'Text', image: 'Image', video: 'Video' }
+
+function formatCount(n) {
+  if (!n) return '0'
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000)     return `${(n / 1_000).toFixed(1)}K`
+  return String(n)
+}
+
+const ENGAGEMENT_METRICS = [
+  { key: 'likes_count',   label: 'Likes',    icon: Heart,           color: 'text-rose-500',   bg: 'bg-rose-50 dark:bg-rose-950/30' },
+  { key: 'saves_count',   label: 'Saves',    icon: Bookmark,        color: 'text-amber-500',  bg: 'bg-amber-50 dark:bg-amber-950/30' },
+  { key: 'comments',      label: 'Comments', icon: MessageCircle,   color: 'text-blue-500',   bg: 'bg-blue-50 dark:bg-blue-950/30' },
+  { key: 'replies_count', label: 'Replies',  icon: CornerDownRight, color: 'text-indigo-500', bg: 'bg-indigo-50 dark:bg-indigo-950/30' },
+  { key: 'shares_count',  label: 'Shares',   icon: Share2,          color: 'text-green-500',  bg: 'bg-green-50 dark:bg-green-950/30' },
+]
+
+function lessonEngagement(lesson) {
+  const replies  = lesson.replies_count  ?? 0
+  const comments = Math.max(0, (lesson.comments_count ?? 0) - replies)
+  return {
+    likes_count:    lesson.likes_count   ?? 0,
+    saves_count:    lesson.saves_count   ?? 0,
+    comments,
+    replies_count:  replies,
+    shares_count:   lesson.shares_count  ?? 0,
+  }
+}
+
+function EngagementStats({ lesson }) {
+  const e = lessonEngagement(lesson)
+  return (
+    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+      <span className="flex items-center gap-0.5"><Heart size={10} className="text-rose-400" /> {formatCount(e.likes_count)}</span>
+      <span className="flex items-center gap-0.5"><Bookmark size={10} className="text-amber-400" /> {formatCount(e.saves_count)}</span>
+      <span className="flex items-center gap-0.5"><MessageCircle size={10} className="text-blue-400" /> {formatCount(e.comments)}</span>
+      <span className="flex items-center gap-0.5"><CornerDownRight size={10} className="text-indigo-400" /> {formatCount(e.replies_count)}</span>
+      <span className="flex items-center gap-0.5"><Share2 size={10} className="text-green-400" /> {formatCount(e.shares_count)}</span>
+    </div>
+  )
+}
 
 function formatDuration(secs) {
   if (!secs) return '—'
@@ -356,9 +397,10 @@ export default function CourseDetailPage() {
       {/* Tabs — always visible */}
       <div className="flex gap-1 border-b border-border">
         {[
-          { key: 'overview', label: 'Overview' },
-          { key: 'lessons',  label: `Lessons (${sortedLessons.length})` },
-          { key: 'students', label: `Students (${course.enrolled_count ?? 0})` },
+          { key: 'overview',    label: 'Overview' },
+          { key: 'lessons',     label: `Lessons (${sortedLessons.length})` },
+          { key: 'engagement',  label: 'Engagement' },
+          { key: 'students',    label: `Students (${course.enrolled_count ?? 0})` },
         ].map((t) => (
           <button
             key={t.key}
@@ -451,6 +493,9 @@ export default function CourseDetailPage() {
                         {lesson.title}
                       </p>
                       <p className="text-xs text-muted-foreground">{LESSON_TYPE_LABEL[lesson.type]} · {formatDuration(lesson.duration_secs)}</p>
+                      <div className="mt-0.5">
+                        <EngagementStats lesson={lesson} />
+                      </div>
                     </div>
                     {lesson.has_quiz && (
                       <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium shrink-0">Quiz</span>
@@ -502,6 +547,9 @@ export default function CourseDetailPage() {
                         <p className="text-xs text-muted-foreground">
                           {LESSON_TYPE_LABEL[lesson.type]} · {formatDuration(lesson.duration_secs)}
                         </p>
+                        <div className="mt-0.5">
+                          <EngagementStats lesson={lesson} />
+                        </div>
                       </div>
                       {lesson.has_quiz ? (
                         <button
@@ -547,6 +595,11 @@ export default function CourseDetailPage() {
             )}
           </div>
         )
+      )}
+
+      {/* ── Engagement tab ────────────────────────────────────────────────────── */}
+      {tab === 'engagement' && (
+        <EngagementTab lessons={sortedLessons} />
       )}
 
       {/* ── Students tab ──────────────────────────────────────────────────────── */}
@@ -785,6 +838,25 @@ function LessonContentPanel({ lesson, canEdit, onEdit, onDelete, onQuiz }) {
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
 
+        {/* Engagement stats — always visible; data comes from getCourse, not the fetch */}
+        <div className="flex flex-col gap-3">
+          <p className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+            <TrendingUp size={14} className="text-muted-foreground" /> Engagement
+          </p>
+          <div className="grid grid-cols-5 gap-2">
+            {ENGAGEMENT_METRICS.map(({ key, label, icon: Icon, color, bg }) => {
+              const e = lessonEngagement(lesson)
+              return (
+                <div key={key} className={cn('flex flex-col items-center gap-1 py-3 px-2 rounded-lg border border-border', bg)}>
+                  <Icon size={14} className={color} />
+                  <span className="text-base font-bold text-foreground">{formatCount(e[key])}</span>
+                  <span className="text-[10px] text-muted-foreground">{label}</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
         {isLoading ? (
           <div className="flex justify-center py-16"><Spinner /></div>
         ) : (
@@ -888,6 +960,116 @@ function LessonContentPanel({ lesson, canEdit, onEdit, onDelete, onQuiz }) {
           </>
         )}
       </div>
+    </div>
+  )
+}
+
+// ── Engagement Tab ────────────────────────────────────────────────────────────
+
+function EngagementTab({ lessons }) {
+  const [sortKey, setSortKey] = useState('likes_count')
+  const [sortDir, setSortDir] = useState('desc')
+
+  const totals = useMemo(() => {
+    return {
+      likes_count:   lessons.reduce((s, l) => s + (l.likes_count   ?? 0), 0),
+      saves_count:   lessons.reduce((s, l) => s + (l.saves_count   ?? 0), 0),
+      comments:      lessons.reduce((s, l) => s + Math.max(0, (l.comments_count ?? 0) - (l.replies_count ?? 0)), 0),
+      replies_count: lessons.reduce((s, l) => s + (l.replies_count ?? 0), 0),
+      shares_count:  lessons.reduce((s, l) => s + (l.shares_count  ?? 0), 0),
+    }
+  }, [lessons])
+
+  const sorted = useMemo(() => {
+    return [...lessons].sort((a, b) => {
+      const aVal = lessonEngagement(a)[sortKey] ?? 0
+      const bVal = lessonEngagement(b)[sortKey] ?? 0
+      return sortDir === 'desc' ? bVal - aVal : aVal - bVal
+    })
+  }, [lessons, sortKey, sortDir])
+
+  const handleSort = (key) => {
+    if (sortKey === key) setSortDir((d) => (d === 'desc' ? 'asc' : 'desc'))
+    else { setSortKey(key); setSortDir('desc') }
+  }
+
+  if (lessons.length === 0) {
+    return (
+      <Card className="p-10 text-center text-muted-foreground text-sm">
+        No lessons yet — engagement data will appear once lessons are added.
+      </Card>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+
+      {/* Course-level totals */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        {ENGAGEMENT_METRICS.map(({ key, label, icon: Icon, color, bg }) => (
+          <Card key={key} className={cn('p-4 flex flex-col items-center gap-1.5', bg)}>
+            <Icon size={18} className={color} />
+            <span className="text-2xl font-bold text-foreground">{formatCount(totals[key])}</span>
+            <span className="text-xs text-muted-foreground">{label}</span>
+          </Card>
+        ))}
+      </div>
+
+      {/* Per-lesson sortable table */}
+      <Card>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground w-full">Lesson</th>
+                {ENGAGEMENT_METRICS.map(({ key, label, icon: Icon, color }) => (
+                  <th
+                    key={key}
+                    className="text-right px-3 py-3 text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground select-none whitespace-nowrap"
+                    onClick={() => handleSort(key)}
+                  >
+                    <div className="flex items-center justify-end gap-1">
+                      <Icon size={12} className={sortKey === key ? color : ''} />
+                      {label}
+                      {sortKey === key && <span className="text-muted-foreground">{sortDir === 'desc' ? '↓' : '↑'}</span>}
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map((lesson) => {
+                const e = lessonEngagement(lesson)
+                return (
+                  <tr key={lesson.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground w-5 shrink-0 text-right">{lesson.order_index + 1}</span>
+                        {LESSON_TYPE_ICON[lesson.type]}
+                        <span className="font-medium text-foreground truncate max-w-[240px]">{lesson.title}</span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-3 text-right tabular-nums font-medium text-foreground">{formatCount(e.likes_count)}</td>
+                    <td className="px-3 py-3 text-right tabular-nums font-medium text-foreground">{formatCount(e.saves_count)}</td>
+                    <td className="px-3 py-3 text-right tabular-nums font-medium text-foreground">{formatCount(e.comments)}</td>
+                    <td className="px-3 py-3 text-right tabular-nums font-medium text-foreground">{formatCount(e.replies_count)}</td>
+                    <td className="px-3 py-3 text-right tabular-nums font-medium text-foreground">{formatCount(e.shares_count)}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+            {/* Totals footer */}
+            <tfoot>
+              <tr className="border-t-2 border-border bg-muted/30">
+                <td className="px-4 py-3 text-xs font-semibold text-muted-foreground">Total ({lessons.length} lessons)</td>
+                {ENGAGEMENT_METRICS.map(({ key }) => (
+                  <td key={key} className="px-3 py-3 text-right tabular-nums text-xs font-bold text-foreground">{formatCount(totals[key])}</td>
+                ))}
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </Card>
     </div>
   )
 }
