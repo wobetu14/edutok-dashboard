@@ -33,7 +33,7 @@ export const NAV_ITEMS = [
   { path: '/courses',         label: 'Courses',        icon: 'BookOpen',        roles: ['super_admin'] },
   { path: '/courses',         label: 'Course Review',  icon: 'BookOpen',        roles: ['org_admin'] },
   { path: '/categories',      label: 'Categories',     icon: 'Tags',            roles: ['super_admin'] },
-  { path: '/analytics',       label: 'Analytics',      icon: 'BarChart2',       roles: ['super_admin', 'org_admin', 'instructor'] },
+  { path: '/analytics',       label: 'Analytics',      icon: 'BarChart2',       roles: ['super_admin', 'org_admin'] },
   { path: '/audit',           label: 'Audit Logs',     icon: 'ScrollText',      roles: ['super_admin'] },
   { path: '/announcements',   label: 'Announcements',  icon: 'Megaphone',       roles: ['super_admin'] },
   { path: '/settings',        label: 'Settings',       icon: 'Settings',        roles: null },
