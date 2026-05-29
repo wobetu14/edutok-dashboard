@@ -33,8 +33,10 @@ export const api = {
   logout:  ()       => client.post('/auth/logout', { refreshToken: localStorage.getItem('refreshToken') }),
 
   // Admin stats
-  stats:      ()         => client.get('/admin/stats'),
-  orgStats:   (orgId)    => client.get('/admin/org-stats', { params: { org_id: orgId } }),
+  stats:           ()       => client.get('/admin/stats'),
+  orgDashboard:    ()       => client.get('/admin/org-dashboard'),
+  instructorDashboard: ()   => client.get('/courses/dashboard'),
+  orgStats:        (orgId)  => client.get('/admin/org-stats', { params: { org_id: orgId } }),
 
   // Users
   listUsers:          (params)       => client.get('/users', { params }),
