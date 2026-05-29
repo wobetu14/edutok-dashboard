@@ -54,6 +54,7 @@ export const api = {
   deleteOrg:          (id)              => client.delete(`/organizations/${id}`),
   listOrgMembers:     (id)              => client.get(`/organizations/${id}/members`),
   listOrgCourses:     (id, params)      => client.get(`/organizations/${id}/courses`, { params }),
+  getOrgEngagement:   (id)              => client.get(`/organizations/${id}/engagement`),
   listApplications:   (params)          => client.get('/organizations/applications', { params }),
   reviewApplication:  (appId, data)     => client.patch(`/organizations/applications/${appId}/review`, data),
 

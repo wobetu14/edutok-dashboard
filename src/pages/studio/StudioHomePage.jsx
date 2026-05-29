@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { BookOpen, Plus, Clock, Users, Clapperboard } from 'lucide-react'
+import { BookOpen, Plus, Users, Clapperboard, Heart, Bookmark, MessageCircle, CornerDownRight, Share2 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -14,6 +14,13 @@ import { api } from '@/api/client'
 import { useAuth } from '@/context/AuthContext'
 import { COURSE_STATUS, COURSE_VISIBILITY, DIFFICULTY } from '@/utils/constants'
 import { cn } from '@/lib/utils'
+
+function formatCount(n) {
+  if (!n) return '0'
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000)     return `${(n / 1_000).toFixed(1)}K`
+  return String(n)
+}
 
 const inputClass  = 'w-full px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring'
 const selectClass = 'w-full px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring'
@@ -216,6 +223,17 @@ function CourseCard({ course, onClick }) {
             {COURSE_VISIBILITY[course.visibility]?.label}
           </Badge>
         </div>
+
+        {/* Engagement row */}
+        {course.engagement && (
+          <div className="pt-2 mt-1 border-t border-border flex items-center gap-2.5 text-[11px] text-muted-foreground flex-wrap">
+            <span className="flex items-center gap-0.5"><Heart size={10} className="text-rose-400" /> {formatCount(course.engagement.likes)}</span>
+            <span className="flex items-center gap-0.5"><Bookmark size={10} className="text-amber-400" /> {formatCount(course.engagement.saves)}</span>
+            <span className="flex items-center gap-0.5"><MessageCircle size={10} className="text-blue-400" /> {formatCount(course.engagement.comments)}</span>
+            <span className="flex items-center gap-0.5"><CornerDownRight size={10} className="text-indigo-400" /> {formatCount(course.engagement.replies)}</span>
+            <span className="flex items-center gap-0.5"><Share2 size={10} className="text-green-400" /> {formatCount(course.engagement.shares)}</span>
+          </div>
+        )}
       </div>
     </Card>
   )

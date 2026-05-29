@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft, Building2, Globe, Calendar, Users, BookOpen,
-  Pencil, PowerOff, Trash2, ShieldCheck, ShieldOff, AlertTriangle,
-  UserCheck, Crown, Phone, Mail, PhoneCall,
+  Pencil, Trash2, ShieldCheck, ShieldOff, AlertTriangle,
+  UserCheck, Crown, Phone, Mail, PhoneCall, TrendingUp,
+  Heart, Bookmark, MessageCircle, CornerDownRight, Share2,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { DataTable } from '@/components/ui/data-table'
@@ -95,6 +96,13 @@ export default function OrgDetailPage() {
         .then((r) => ({ courses: r.data.data, total: r.data.meta?.total ?? 0 })),
     keepPreviousData: true,
     enabled: tab === 'courses',
+  })
+
+  const { data: engData, isLoading: engLoading } = useQuery({
+    queryKey: ['org-engagement', orgId],
+    queryFn:  () => api.getOrgEngagement(orgId).then((r) => r.data.data),
+    enabled:  tab === 'engagement',
+    staleTime: 60_000,
   })
 
   // ── Mutations ──────────────────────────────────────────────────────────
@@ -448,6 +456,10 @@ export default function OrgDetailPage() {
             <BookOpen size={14} />
             Courses {org.course_count > 0 && `(${org.course_count})`}
           </TabsTrigger>
+          <TabsTrigger value="engagement" className="gap-2">
+            <TrendingUp size={14} />
+            Engagement
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="members" className="mt-3">
@@ -478,6 +490,10 @@ export default function OrgDetailPage() {
               onPageChange={setCoursePage}
             />
           </Card>
+        </TabsContent>
+
+        <TabsContent value="engagement" className="mt-3">
+          <OrgEngagementPanel engData={engData} isLoading={engLoading} />
         </TabsContent>
       </Tabs>
 
@@ -682,6 +698,205 @@ export default function OrgDetailPage() {
         </DialogContent>
       </Dialog>
 
+    </div>
+  )
+}
+
+// ── Org Engagement Panel ──────────────────────────────────────────────────────
+
+function formatCount(n) {
+  if (!n) return '0'
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000)     return `${(n / 1_000).toFixed(1)}K`
+  return String(n)
+}
+
+const ENG_METRICS = [
+  { key: 'likes',    label: 'Likes',    Icon: Heart,           color: 'text-rose-500',   bg: 'bg-rose-50 dark:bg-rose-950/30' },
+  { key: 'saves',    label: 'Saves',    Icon: Bookmark,        color: 'text-amber-500',  bg: 'bg-amber-50 dark:bg-amber-950/30' },
+  { key: 'comments', label: 'Comments', Icon: MessageCircle,   color: 'text-blue-500',   bg: 'bg-blue-50 dark:bg-blue-950/30' },
+  { key: 'replies',  label: 'Replies',  Icon: CornerDownRight, color: 'text-indigo-500', bg: 'bg-indigo-50 dark:bg-indigo-950/30' },
+  { key: 'shares',   label: 'Shares',   Icon: Share2,          color: 'text-green-500',  bg: 'bg-green-50 dark:bg-green-950/30' },
+]
+
+const LESSON_TYPE_ICON = {
+  text:  <span className="text-blue-400 text-[10px] font-bold px-1 rounded bg-blue-50 dark:bg-blue-950/30">TXT</span>,
+  image: <span className="text-green-400 text-[10px] font-bold px-1 rounded bg-green-50 dark:bg-green-950/30">IMG</span>,
+  video: <span className="text-purple-400 text-[10px] font-bold px-1 rounded bg-purple-50 dark:bg-purple-950/30">VID</span>,
+}
+
+function OrgEngagementPanel({ engData, isLoading }) {
+  const [view, setView]       = useState('courses')   // 'courses' | 'lessons'
+  const [sortKey, setSortKey] = useState('likes')
+  const [sortDir, setSortDir] = useState('desc')
+
+  const handleSort = (key) => {
+    if (sortKey === key) setSortDir((d) => (d === 'desc' ? 'asc' : 'desc'))
+    else { setSortKey(key); setSortDir('desc') }
+  }
+
+  const sortedCourses = useMemo(() => {
+    if (!engData?.courses) return []
+    return [...engData.courses].sort((a, b) => {
+      const aVal = a.engagement?.[sortKey] ?? 0
+      const bVal = b.engagement?.[sortKey] ?? 0
+      return sortDir === 'desc' ? bVal - aVal : aVal - bVal
+    })
+  }, [engData?.courses, sortKey, sortDir])
+
+  const sortedLessons = useMemo(() => {
+    if (!engData?.lessons) return []
+    return [...engData.lessons].sort((a, b) => {
+      const getVal = (l) => {
+        if (sortKey === 'comments') return l.comments ?? 0
+        if (sortKey === 'replies')  return l.replies_count ?? 0
+        return l[`${sortKey}_count`] ?? 0
+      }
+      return sortDir === 'desc' ? getVal(b) - getVal(a) : getVal(a) - getVal(b)
+    })
+  }, [engData?.lessons, sortKey, sortDir])
+
+  if (isLoading) return <div className="flex justify-center py-16"><Spinner /></div>
+
+  if (!engData) return (
+    <Card className="p-10 text-center text-muted-foreground text-sm">
+      No engagement data available.
+    </Card>
+  )
+
+  const { totals } = engData
+  const totalEngagement = (totals.likes ?? 0) + (totals.saves ?? 0) + (totals.comments ?? 0) + (totals.replies ?? 0) + (totals.shares ?? 0)
+
+  return (
+    <div className="flex flex-col gap-5">
+
+      {/* Org-wide totals */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        {ENG_METRICS.map(({ key, label, Icon, color, bg }) => (
+          <Card key={key} className={`p-4 flex flex-col items-center gap-1.5 ${bg}`}>
+            <Icon size={18} className={color} />
+            <span className="text-2xl font-bold text-foreground">{formatCount(totals[key] ?? 0)}</span>
+            <span className="text-xs text-muted-foreground">{label}</span>
+          </Card>
+        ))}
+      </div>
+
+      {totalEngagement === 0 && (
+        <p className="text-sm text-muted-foreground text-center py-4">
+          No engagement activity recorded yet.
+        </p>
+      )}
+
+      {/* View toggle */}
+      <div className="flex items-center justify-between">
+        <div className="flex gap-1 p-0.5 bg-muted rounded-lg">
+          {[{ key: 'courses', label: 'By Course' }, { key: 'lessons', label: 'By Lesson' }].map((v) => (
+            <button
+              key={v.key}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                view === v.key ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              }`}
+              onClick={() => { setView(v.key); setSortKey('likes'); setSortDir('desc') }}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
+        <span className="text-xs text-muted-foreground">
+          {view === 'courses'
+            ? `${engData.courses.length} course${engData.courses.length !== 1 ? 's' : ''}`
+            : `${engData.lessons.length} lesson${engData.lessons.length !== 1 ? 's' : ''}`}
+        </span>
+      </div>
+
+      {/* Sortable breakdown table */}
+      <Card>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground w-full">
+                  {view === 'courses' ? 'Course' : 'Lesson'}
+                </th>
+                {ENG_METRICS.map(({ key, label, Icon, color }) => (
+                  <th
+                    key={key}
+                    className="text-right px-3 py-3 text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground select-none whitespace-nowrap"
+                    onClick={() => handleSort(key)}
+                  >
+                    <div className="flex items-center justify-end gap-1">
+                      <Icon size={12} className={sortKey === key ? color : ''} />
+                      {label}
+                      {sortKey === key && <span className="text-muted-foreground">{sortDir === 'desc' ? '↓' : '↑'}</span>}
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {view === 'courses' && sortedCourses.map((course) => (
+                <tr key={course.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      {course.thumbnail_url
+                        ? <img src={course.thumbnail_url} alt="" className="w-7 h-7 rounded object-cover shrink-0" />
+                        : <div className="w-7 h-7 rounded bg-muted shrink-0" />}
+                      <div>
+                        <p className="text-sm font-medium text-foreground truncate max-w-[200px]">{course.title}</p>
+                        <p className="text-xs text-muted-foreground">{course.lesson_count} lesson{course.lesson_count !== 1 ? 's' : ''}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-3 py-3 text-right tabular-nums font-medium text-foreground">{formatCount(course.engagement?.likes ?? 0)}</td>
+                  <td className="px-3 py-3 text-right tabular-nums font-medium text-foreground">{formatCount(course.engagement?.saves ?? 0)}</td>
+                  <td className="px-3 py-3 text-right tabular-nums font-medium text-foreground">{formatCount(course.engagement?.comments ?? 0)}</td>
+                  <td className="px-3 py-3 text-right tabular-nums font-medium text-foreground">{formatCount(course.engagement?.replies ?? 0)}</td>
+                  <td className="px-3 py-3 text-right tabular-nums font-medium text-foreground">{formatCount(course.engagement?.shares ?? 0)}</td>
+                </tr>
+              ))}
+
+              {view === 'lessons' && sortedLessons.map((lesson) => (
+                <tr key={lesson.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      {LESSON_TYPE_ICON[lesson.type]}
+                      <span className="text-sm font-medium text-foreground truncate max-w-[220px]">{lesson.title}</span>
+                    </div>
+                  </td>
+                  <td className="px-3 py-3 text-right tabular-nums font-medium text-foreground">{formatCount(lesson.likes_count ?? 0)}</td>
+                  <td className="px-3 py-3 text-right tabular-nums font-medium text-foreground">{formatCount(lesson.saves_count ?? 0)}</td>
+                  <td className="px-3 py-3 text-right tabular-nums font-medium text-foreground">{formatCount(lesson.comments ?? 0)}</td>
+                  <td className="px-3 py-3 text-right tabular-nums font-medium text-foreground">{formatCount(lesson.replies_count ?? 0)}</td>
+                  <td className="px-3 py-3 text-right tabular-nums font-medium text-foreground">{formatCount(lesson.shares_count ?? 0)}</td>
+                </tr>
+              ))}
+
+              {((view === 'courses' && sortedCourses.length === 0) || (view === 'lessons' && sortedLessons.length === 0)) && (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground text-sm">
+                    No {view === 'courses' ? 'courses' : 'lessons'} found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+            {/* Totals footer */}
+            {((view === 'courses' && sortedCourses.length > 0) || (view === 'lessons' && sortedLessons.length > 0)) && (
+              <tfoot>
+                <tr className="border-t-2 border-border bg-muted/30">
+                  <td className="px-4 py-3 text-xs font-semibold text-muted-foreground">
+                    Total ({view === 'courses' ? sortedCourses.length : sortedLessons.length} {view === 'courses' ? 'courses' : 'lessons'})
+                  </td>
+                  {ENG_METRICS.map(({ key }) => (
+                    <td key={key} className="px-3 py-3 text-right tabular-nums text-xs font-bold text-foreground">
+                      {formatCount(totals[key] ?? 0)}
+                    </td>
+                  ))}
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+      </Card>
     </div>
   )
 }
