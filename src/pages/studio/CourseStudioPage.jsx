@@ -119,8 +119,11 @@ const initQuizForm = (type, existingQuiz) => {
   if (type === 'multipleChoice') {
     return { type, questions: existingQuiz?.questions_json ?? [{ question: '', options: ['', ''], answer: '' }] }
   }
-  if (type === 'imageMatching') {
-    return { type, questions: existingQuiz?.questions_json ?? [{ pairs: [{ image: '', label: '' }, { image: '', label: '' }] }] }
+  if (type === 'sortZone') {
+    return { type, questions: existingQuiz?.questions_json ?? [{ question: '', imageUri: '', leftLabel: '', rightLabel: '', correctZone: 'left' }] }
+  }
+  if (type === 'textMatching') {
+    return { type, questions: existingQuiz?.questions_json ?? [{ pairs: [{ left: '', right: '' }, { left: '', right: '' }] }] }
   }
   return { type, questions: [] }
 }
@@ -859,11 +862,13 @@ function LessonEditorPanel({ courseId, lesson, canManage, isSaving, saveError, o
   const createQuizMutation = useMutation({
     mutationFn: (data) => api.createQuiz(data),
     onSuccess: () => { invalidateLesson(); setQuizMode('view') },
+    onError: (err) => setQError(err.response?.data?.message ?? 'Failed to create quiz'),
   })
 
   const updateQuizMutation = useMutation({
     mutationFn: ({ quizId, ...data }) => api.updateQuiz(quizId, data),
     onSuccess: () => { invalidateLesson(); setQuizMode('view') },
+    onError: (err) => setQError(err.response?.data?.message ?? 'Failed to save quiz'),
   })
 
   const deleteQuizMutation = useMutation({
@@ -917,7 +922,9 @@ function LessonEditorPanel({ courseId, lesson, canManage, isSaving, saveError, o
       ? { question: '', answer: true }
       : quizForm.type === 'multipleChoice'
         ? { question: '', options: ['', ''], answer: '' }
-        : { pairs: [{ image: '', label: '' }, { image: '', label: '' }] }
+        : quizForm.type === 'textMatching'
+          ? { pairs: [{ left: '', right: '' }, { left: '', right: '' }] }
+          : { question: '', imageUri: '', leftLabel: '', rightLabel: '', correctZone: 'left' }
     setQuizForm((prev) => ({ ...prev, questions: [...prev.questions, blank] }))
   }
 
@@ -1128,7 +1135,8 @@ function LessonEditorPanel({ courseId, lesson, canManage, isSaving, saveError, o
                         <Badge color="bg-primary/10 text-primary">
                           {quizData.type === 'truefalse' ? 'True / False'
                             : quizData.type === 'multipleChoice' ? 'Multiple Choice'
-                            : 'Image Matching'}
+                            : quizData.type === 'sortZone' ? 'Sort Zone'
+                            : 'Text Match'}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
                           {quizData.questions_json?.length} question{quizData.questions_json?.length !== 1 ? 's' : ''}
@@ -1137,9 +1145,11 @@ function LessonEditorPanel({ courseId, lesson, canManage, isSaving, saveError, o
                       <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto">
                         {(quizData.questions_json ?? []).map((q, i) => (
                           <div key={i} className="text-xs border border-border rounded p-2 bg-background">
-                            {quizData.type !== 'imageMatching' && (
-                              <p className="font-medium">{i + 1}. {q.question}</p>
-                            )}
+                            <p className="font-medium">
+                              {quizData.type === 'textMatching'
+                                ? `Match Set ${i + 1}`
+                                : `${i + 1}. ${q.question}`}
+                            </p>
                             {quizData.type === 'truefalse' && (
                               <p className="text-muted-foreground mt-0.5">Answer: <strong>{q.answer ? 'True' : 'False'}</strong></p>
                             )}
@@ -1152,13 +1162,22 @@ function LessonEditorPanel({ courseId, lesson, canManage, isSaving, saveError, o
                                 ))}
                               </div>
                             )}
-                            {quizData.type === 'imageMatching' && (
-                              <div className="flex flex-col gap-0.5">
+                            {quizData.type === 'sortZone' && (
+                              <div className="flex gap-2 items-start mt-1">
+                                {q.imageUri && <img src={q.imageUri} alt="" className="w-12 h-12 object-cover rounded shrink-0" />}
+                                <div className="flex flex-col gap-0.5 text-muted-foreground">
+                                  <span>Left: <strong>{q.leftLabel || '—'}</strong> / Right: <strong>{q.rightLabel || '—'}</strong></span>
+                                  <span>Correct: <strong className="text-green-600 capitalize">{q.correctZone}</strong></span>
+                                </div>
+                              </div>
+                            )}
+                            {quizData.type === 'textMatching' && (
+                              <div className="flex flex-col gap-0.5 mt-1">
                                 {(q.pairs ?? []).map((p, j) => (
-                                  <span key={j} className="flex gap-2">
-                                    <span className="text-muted-foreground truncate max-w-[120px]">{p.image}</span>
-                                    <span>→</span>
-                                    <span className="font-medium">{p.label}</span>
+                                  <span key={j} className="flex gap-1.5 text-muted-foreground">
+                                    <span className="font-medium text-foreground">{p.left}</span>
+                                    <span>↔</span>
+                                    <span className="font-medium text-foreground">{p.right}</span>
                                   </span>
                                 ))}
                               </div>
@@ -1200,14 +1219,16 @@ function LessonEditorPanel({ courseId, lesson, canManage, isSaving, saveError, o
                           >
                             <option value="truefalse">True / False</option>
                             <option value="multipleChoice">Multiple Choice</option>
-                            <option value="imageMatching">Image Matching</option>
+                            <option value="sortZone">Sort Zone</option>
+                            <option value="textMatching">Text Match</option>
                           </select>
                         </div>
                       ) : (
                         <Badge color="bg-muted text-foreground" className="self-start text-xs">
                           {quizForm.type === 'truefalse' ? 'True / False'
                             : quizForm.type === 'multipleChoice' ? 'Multiple Choice'
-                            : 'Image Matching'}
+                            : quizForm.type === 'sortZone' ? 'Sort Zone'
+                            : 'Text Match'}
                         </Badge>
                       )}
 
@@ -1250,7 +1271,7 @@ function LessonEditorPanel({ courseId, lesson, canManage, isSaving, saveError, o
                             onAddPair={(qi2) => setQuizForm((prev) => ({
                               ...prev,
                               questions: prev.questions.map((qq, i) =>
-                                i !== qi2 ? qq : { ...qq, pairs: [...qq.pairs, { image: '', label: '' }] }
+                                i !== qi2 ? qq : { ...qq, pairs: [...qq.pairs, { left: '', right: '' }] }
                               ),
                             }))}
                             onRemovePair={(qi2, pi) => setQuizForm((prev) => ({
@@ -1574,6 +1595,181 @@ function VideoEditor({ form, setField, errors, canManage }) {
 
 // ── Quiz question row component ────────────────────────────────────────────────
 
+function TextMatchingQuestionRow({ q, qi, canRemove, onRemove, onUpdatePair, onAddPair, onRemovePair }) {
+  return (
+    <div className="border border-border rounded-md p-3 bg-background flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium text-muted-foreground">Match Set {qi + 1}</span>
+        {canRemove && (
+          <button className="text-xs text-destructive hover:underline" onClick={() => onRemove(qi)}>
+            Remove
+          </button>
+        )}
+      </div>
+
+      {/* Column headers */}
+      <div className="grid grid-cols-2 gap-1.5 pl-0">
+        <span className="text-xs font-semibold text-muted-foreground">Left Label</span>
+        <span className="text-xs font-semibold text-muted-foreground">Right Label</span>
+      </div>
+
+      {/* Pair rows */}
+      <div className="flex flex-col gap-1.5">
+        {(q.pairs ?? []).map((pair, pi) => (
+          <div key={pi} className="grid grid-cols-2 gap-1.5">
+            <input
+              className={cn(inputClass, 'text-xs py-1.5')}
+              value={pair.left}
+              onChange={(e) => onUpdatePair(qi, pi, 'left', e.target.value)}
+              placeholder="Left label…"
+            />
+            <div className="flex gap-1">
+              <input
+                className={cn(inputClass, 'flex-1 text-xs py-1.5')}
+                value={pair.right}
+                onChange={(e) => onUpdatePair(qi, pi, 'right', e.target.value)}
+                placeholder="Matching right label…"
+              />
+              {(q.pairs ?? []).length > 2 && (
+                <button
+                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-destructive/10 text-destructive shrink-0"
+                  onClick={() => onRemovePair(qi, pi)}
+                >
+                  <X size={11} />
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {(q.pairs ?? []).length < 10 && (
+        <Button type="button" variant="outline" size="sm" className="self-start gap-1 text-xs h-6 px-2"
+          onClick={() => onAddPair(qi)}>
+          <Plus size={10} /> Add Pair
+        </Button>
+      )}
+      <p className="text-xs text-muted-foreground">Students drag left labels onto their matching right label.</p>
+    </div>
+  )
+}
+
+function SortZoneQuestionRow({ q, qi, canRemove, onUpdate, onRemove }) {
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
+  const fileRef = useRef(null)
+
+  const handleImageUpload = async (file) => {
+    if (!file) return
+    setUploading(true)
+    setUploadError('')
+    try {
+      const res = await api.uploadLessonImage(file)
+      onUpdate(qi, 'imageUri', res.data.data.url)
+    } catch (err) {
+      setUploadError(err.response?.data?.message ?? 'Upload failed')
+    } finally {
+      setUploading(false)
+      if (fileRef.current) fileRef.current.value = ''
+    }
+  }
+
+  return (
+    <div className="border border-border rounded-md p-3 bg-background flex flex-col gap-3">
+      {/* Question text + remove button */}
+      <div className="flex gap-2 items-start">
+        <span className="text-xs text-muted-foreground pt-2.5 w-6 shrink-0 font-mono">Q{qi + 1}</span>
+        <input
+          className={cn(inputClass, 'flex-1 text-xs')}
+          value={q.question ?? ''}
+          onChange={(e) => onUpdate(qi, 'question', e.target.value)}
+          placeholder="Question text…"
+        />
+        {canRemove && (
+          <button
+            className="mt-1 w-6 h-6 flex items-center justify-center rounded hover:bg-destructive/10 text-destructive shrink-0"
+            onClick={() => onRemove(qi)}
+          >
+            <X size={12} />
+          </button>
+        )}
+      </div>
+
+      {/* Question image upload */}
+      <div className="pl-8 flex flex-col gap-1.5">
+        <label className="text-xs font-medium text-muted-foreground">
+          Question Image <span className="text-destructive">*</span>
+        </label>
+        <div className="flex gap-3 items-start">
+          <div className="w-24 h-24 rounded-md border border-border bg-muted flex items-center justify-center overflow-hidden shrink-0">
+            {q.imageUri ? (
+              <img src={q.imageUri} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <ImageIcon size={20} className="text-muted-foreground/40" />
+            )}
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="hidden"
+              onChange={(e) => handleImageUpload(e.target.files?.[0])}
+            />
+            <Button
+              type="button" variant="outline" size="sm" className="gap-2 text-xs"
+              disabled={uploading}
+              onClick={() => fileRef.current?.click()}
+            >
+              {uploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+              {uploading ? 'Uploading…' : q.imageUri ? 'Replace Image' : 'Upload Image'}
+            </Button>
+            <p className="text-xs text-muted-foreground">JPEG, PNG, WebP · Max 10 MB</p>
+            {uploadError && <p className="text-xs text-destructive">{uploadError}</p>}
+          </div>
+        </div>
+      </div>
+
+      {/* Zone labels */}
+      <div className="pl-8 grid grid-cols-2 gap-3">
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-muted-foreground">Left Zone Label</label>
+          <input
+            className={cn(inputClass, 'text-xs')}
+            value={q.leftLabel ?? ''}
+            onChange={(e) => onUpdate(qi, 'leftLabel', e.target.value)}
+            placeholder="e.g. Internal Factor"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-muted-foreground">Right Zone Label</label>
+          <input
+            className={cn(inputClass, 'text-xs')}
+            value={q.rightLabel ?? ''}
+            onChange={(e) => onUpdate(qi, 'rightLabel', e.target.value)}
+            placeholder="e.g. External Factor"
+          />
+        </div>
+      </div>
+
+      {/* Correct zone picker */}
+      <div className="pl-8 flex flex-col gap-1">
+        <label className="text-xs font-medium text-muted-foreground">Correct Zone</label>
+        <div className="flex gap-6 text-xs">
+          <label className="flex items-center gap-1.5 cursor-pointer">
+            <input type="radio" checked={q.correctZone === 'left'} onChange={() => onUpdate(qi, 'correctZone', 'left')} />
+            Left
+          </label>
+          <label className="flex items-center gap-1.5 cursor-pointer">
+            <input type="radio" checked={q.correctZone === 'right'} onChange={() => onUpdate(qi, 'correctZone', 'right')} />
+            Right
+          </label>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function QuizQuestionRow({ q, qi, type, canRemove, onUpdate, onRemove, onUpdateOption, onAddOption, onRemoveOption, onUpdatePair, onAddPair, onRemovePair }) {
   if (type === 'truefalse') {
     return (
@@ -1652,49 +1848,16 @@ function QuizQuestionRow({ q, qi, type, canRemove, onUpdate, onRemove, onUpdateO
     )
   }
 
-  if (type === 'imageMatching') {
+  if (type === 'sortZone') {
+    return <SortZoneQuestionRow q={q} qi={qi} canRemove={canRemove} onUpdate={onUpdate} onRemove={onRemove} />
+  }
+  if (type === 'textMatching') {
     return (
-      <div className="border border-border rounded-md p-3 bg-background flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-muted-foreground">Match Set {qi + 1}</span>
-          {canRemove && (
-            <button className="text-xs text-destructive hover:underline" onClick={() => onRemove(qi)}>Remove</button>
-          )}
-        </div>
-        <div className="grid grid-cols-2 gap-1.5">
-          <span className="text-xs text-muted-foreground">Image URL</span>
-          <span className="text-xs text-muted-foreground">Label</span>
-          {(q.pairs ?? []).map((pair, pi) => (
-            <>
-              <input
-                key={`img-${pi}`}
-                className={cn(inputClass, 'text-xs py-1.5')}
-                value={pair.image}
-                onChange={(e) => onUpdatePair(qi, pi, 'image', e.target.value)}
-                placeholder="https://…"
-              />
-              <div className="flex gap-1">
-                <input
-                  className={cn(inputClass, 'flex-1 text-xs py-1.5')}
-                  value={pair.label}
-                  onChange={(e) => onUpdatePair(qi, pi, 'label', e.target.value)}
-                  placeholder="Label"
-                />
-                {(q.pairs ?? []).length > 2 && (
-                  <button className="w-7 h-7 flex items-center justify-center rounded hover:bg-destructive/10 text-destructive shrink-0"
-                    onClick={() => onRemovePair(qi, pi)}><X size={11} /></button>
-                )}
-              </div>
-            </>
-          ))}
-        </div>
-        {(q.pairs ?? []).length < 10 && (
-          <Button type="button" variant="outline" size="sm" className="self-start gap-1 text-xs h-6 px-2"
-            onClick={() => onAddPair(qi)}>
-            <Plus size={10} /> Pair
-          </Button>
-        )}
-      </div>
+      <TextMatchingQuestionRow
+        q={q} qi={qi} canRemove={canRemove}
+        onRemove={onRemove}
+        onUpdatePair={onUpdatePair} onAddPair={onAddPair} onRemovePair={onRemovePair}
+      />
     )
   }
   return null
