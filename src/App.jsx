@@ -11,7 +11,8 @@ import CoursesPage from './pages/courses/CoursesPage';
 import CourseDetailPage from './pages/courses/CourseDetailPage';
 import StudioHomePage from './pages/studio/StudioHomePage';
 import CourseStudioPage from './pages/studio/CourseStudioPage';
-import AnalyticsPage from './pages/analytics/AnalyticsPage';
+import AnalyticsPage from './pages/analytics/AnalyticsPage'
+import ChangePasswordPage from './pages/auth/ChangePasswordPage';
 import AuditPage from './pages/audit/AuditPage';
 import AnnouncementsPage from './pages/announcements/AnnouncementsPage';
 import CategoriesPage from './pages/categories/CategoriesPage';
@@ -25,6 +26,13 @@ function RequireAuth({ children, roles }) {
   if (isLoading) return null;
   if (!user) return <Navigate to="/login" replace />;
   if (roles && !roles.includes(user.role)) return <Navigate to="/dashboard" replace />;
+  return children;
+}
+
+// Blocks access to all dashboard pages until the temporary password is changed.
+function RequirePasswordChange({ children }) {
+  const { user } = useAuth();
+  if (user?.must_change_password) return <Navigate to="/change-password" replace />;
   return children;
 }
 
@@ -43,7 +51,17 @@ export default function App() {
         element={user ? <Navigate to="/dashboard" replace /> : <LoginPage />}
       />
 
-      <Route element={<RequireAuth><Layout /></RequireAuth>}>
+      {/* Forced password change — full-page, no Layout sidebar */}
+      <Route
+        path="/change-password"
+        element={
+          <RequireAuth>
+            <ChangePasswordPage />
+          </RequireAuth>
+        }
+      />
+
+      <Route element={<RequireAuth><RequirePasswordChange><Layout /></RequirePasswordChange></RequireAuth>}>
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<DashboardPage />} />
 

@@ -29,8 +29,9 @@ client.interceptors.response.use(
 
 export const api = {
   // Auth
-  login:   (data)   => client.post('/auth/login', data),
-  logout:  ()       => client.post('/auth/logout', { refreshToken: localStorage.getItem('refreshToken') }),
+  login:                    (data) => client.post('/auth/login', data),
+  logout:                   ()     => client.post('/auth/logout', { refreshToken: localStorage.getItem('refreshToken') }),
+  changePasswordFirstLogin: (data) => client.post('/auth/change-password-first-login', data),
 
   // Admin stats
   stats:           ()       => client.get('/admin/stats'),

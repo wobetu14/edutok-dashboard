@@ -22,7 +22,7 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (username, password) => {
     const res = await api.login({ username, password });
-    const { user: u, accessToken, refreshToken } = res.data.data;
+    const { user: u, accessToken, refreshToken, must_change_password } = res.data.data;
 
     // Only allow staff roles into the dashboard
     if (!['super_admin', 'org_admin', 'instructor'].includes(u.role)) {
@@ -31,8 +31,9 @@ export function AuthProvider({ children }) {
 
     localStorage.setItem('accessToken', accessToken);
     localStorage.setItem('refreshToken', refreshToken);
-    setUser(u);
-    return u;
+    const enriched = { ...u, must_change_password: !!must_change_password };
+    setUser(enriched);
+    return enriched;
   }, []);
 
   const logout = useCallback(async () => {
